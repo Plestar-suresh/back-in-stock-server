@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(bodyParser.json());
 
-const FILE_PATH = './data.json';
+const FILE_PATH = __dirname + '/data.json';
 
 // Load existing data or initialize empty
 let data = [];
