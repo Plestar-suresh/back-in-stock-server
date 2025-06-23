@@ -3,7 +3,9 @@ const fs = require('fs');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
+const https = require('https');
 require('dotenv').config();
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -60,7 +62,10 @@ app.post('/api/stock-update', async (req, res) => {
   fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: entries.length });
 });
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+const options = {
+  key: fs.readFileSync('/etc/letsencrypt/live/chat.coachstech.com/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/chat.coachstech.com/cert.pem'),
+};
+https.createServer(options, app).listen(PORT, () => {
+    console.log('Server running on port 4000');
 });
