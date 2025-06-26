@@ -9,7 +9,7 @@ require('dotenv').config();
 
  
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 7000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -86,5 +86,5 @@ const options = {
   cert: fs.readFileSync('/etc/letsencrypt/live/apps.plestarinc.com/fullchain.pem'),
 };
 https.createServer(options, app).listen(PORT, () => {
-    console.log('Server running on port 4000');
+    console.log('Server running on port 7000');
 });
