@@ -87,7 +87,7 @@ app.post('/api/stock-update', async (req, res) => {
         <img src="${productData.image?.src}" alt="${productData.title}" style="max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
       </div>
       <div style="text-align: center; margin: 20px 0;">
-        <a href="https://${productData.vendor}/products/${productData.handle}?variant=${entry.variantId}" 
+        <a href="${productUrl}" 
            style="background: #007acc; color: white; text-decoration: none; padding: 12px 24px; font-size: 16px; border-radius: 5px; display: inline-block;">
           View Product
         </a>
