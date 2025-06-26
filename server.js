@@ -81,7 +81,7 @@ app.post('/api/stock-update', async (req, res) => {
       const htmlContent = `
         <div style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #333; padding: 20px; max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #eaeaea; border-radius: 8px;">
       <h2 style="color: #1a1a1a;">${productTitle} is Back in Stock!</h2>
-      <p>Hi ${entry.name || 'Customer'},</p>
+      <p>Hi ${subscriber.name || 'Customer'},</p>
       <p>Good news! The product you were waiting for is now available again.</p>
       <div style="text-align: center; margin: 20px 0;">
         <img src="${productImage}" alt="${productTitle}" style="max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
