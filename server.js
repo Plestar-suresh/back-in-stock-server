@@ -41,7 +41,8 @@ app.post('/api/notify', (req, res) => {
 app.post('/api/stock-update', async (req, res) => {
   console.log("Webhook Called, data:", JSON.stringify(req.body, null, 2));
 
-  const { id: productId, variants } = req.body;
+  const productId = req.body.id;
+  const variants = Array.isArray(req.body.variants) ? req.body.variants : [];
 
   const isInStock = variants.some(v => v.inventory_quantity > 0);
   if (!isInStock) {
@@ -74,13 +75,14 @@ app.post('/api/stock-update', async (req, res) => {
       entry.notified = true;
       console.log(`Email sent to: ${entry.email}`);
     } catch (err) {
-      console.error(`Failed to send email to ${entry.email}:`, err);
+      console.error(`Error sending to ${entry.email}:`, err);
     }
   }
 
   fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: entries.length });
 });
+
 
 app.post('/webhook', (req, res) => {
   console.log('Received GitHub webhook push event for front-end');
