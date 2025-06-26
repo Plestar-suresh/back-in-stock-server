@@ -76,9 +76,8 @@ app.post('/api/stock-update', async (req, res) => {
       continue;
     }
 
-    const productUrl = `https://${entry.storeDomain}/products/${product.handle}?variant=${entry.variantId}`;
-
     for (const subscriber of matchingSubscribers) {
+     const productUrl = `https://${subscriber.storeDomain}/products/${productHandle}?variant=${subscriber.variantId}`;
       const htmlContent = `
         <div style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #333; padding: 20px; max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #eaeaea; border-radius: 8px;">
       <h2 style="color: #1a1a1a;">${productData.title} is Back in Stock!</h2>
