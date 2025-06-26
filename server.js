@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const https = require('https');
+const { spawn } = require('child_process');
 require('dotenv').config();
 
 
@@ -61,6 +62,24 @@ app.post('/api/stock-update', async (req, res) => {
 
   fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: entries.length });
+});
+app.post('/webhook', (req, res) => {
+  console.log('Received GitHub webhook push event for front-end');
+
+  const deploy = spawn('/var/www/html/deploy.sh');
+
+  deploy.stdout.on('data', (data) => {
+    console.log(`${data.toString()}`);
+  });
+
+  deploy.stderr.on('data', (data) => {
+    console.log(`${data.toString()}`);
+  });
+
+  deploy.on('close', (code) => {
+    console.log(`Deployment process exited with code ${code}`);
+    res.status(200).send('Deployment triggered');
+  });
 });
 const options = {
   key: fs.readFileSync('/etc/letsencrypt/live/apps.plestarinc.com/privkey.pem'),
