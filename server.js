@@ -39,9 +39,21 @@ app.post('/api/notify', (req, res) => {
 
 // Optional: simulate stock update and send emails
 app.post('/api/stock-update', async (req, res) => {
- console.log("Webhook Called, data:", req.body);
-  const { productId } = req.body;
+  console.log("Webhook Called, data:", JSON.stringify(req.body, null, 2));
+
+  const { id: productId, variants } = req.body;
+
+  const isInStock = variants.some(v => v.inventory_quantity > 0);
+  if (!isInStock) {
+    console.log("No variants in stock, skipping notification.");
+    return res.json({ ok: true, notified: 0 });
+  }
+
   const entries = data.filter(entry => entry.productId === productId && !entry.notified);
+  if (entries.length === 0) {
+    console.log("No matching subscribers to notify.");
+    return res.json({ ok: true, notified: 0 });
+  }
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -52,18 +64,24 @@ app.post('/api/stock-update', async (req, res) => {
   });
 
   for (const entry of entries) {
-    await transporter.sendMail({
-      from: `"Shopify Store" <${process.env.EMAIL_USER}>`,
-      to: entry.email,
-      subject: 'Product is back in stock!',
-      text: `Hi ${entry.name || 'Customer'}, the product you're interested in is back in stock!`
-    });
-    entry.notified = true;
+    try {
+      await transporter.sendMail({
+        from: `"Shopify Store" <${process.env.EMAIL_USER}>`,
+        to: entry.email,
+        subject: 'Product is back in stock!',
+        text: `Hi ${entry.name || 'Customer'}, the product you're interested in is back in stock!`
+      });
+      entry.notified = true;
+      console.log(`Email sent to: ${entry.email}`);
+    } catch (err) {
+      console.error(`Failed to send email to ${entry.email}:`, err);
+    }
   }
 
   fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: entries.length });
 });
+
 app.post('/webhook', (req, res) => {
   console.log('Received GitHub webhook push event for front-end');
 
