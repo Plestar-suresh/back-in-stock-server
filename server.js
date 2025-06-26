@@ -63,8 +63,8 @@ app.post('/api/stock-update', async (req, res) => {
   res.json({ ok: true, notified: entries.length });
 });
 const options = {
-  key: fs.readFileSync('/etc/letsencrypt/live/chat.coachstech.com/privkey.pem'),
-  cert: fs.readFileSync('/etc/letsencrypt/live/chat.coachstech.com/cert.pem'),
+  key: fs.readFileSync('/etc/letsencrypt/live/apps.plestarinc.com/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/apps.plestarinc.com/fullchain.pem'),
 };
 https.createServer(options, app).listen(PORT, () => {
     console.log('Server running on port 4000');
