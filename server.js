@@ -39,7 +39,7 @@ app.post('/api/notify', (req, res) => {
 
 // Optional: simulate stock update and send emails
 app.post('/api/stock-update', async (req, res) => {
- console.log("Webhook Called, data:"+req.body);
+ console.log("Webhook Called, data:", req.body);
   const { productId } = req.body;
   const entries = data.filter(entry => entry.productId === productId && !entry.notified);
 
