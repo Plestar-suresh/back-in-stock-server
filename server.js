@@ -23,13 +23,18 @@ if (fs.existsSync(FILE_PATH)) {
 }
 
 app.post('/api/notify', (req, res) => {
-  const { name, email, productId, variantId, storeDomain } = req.body;
+  const { name, email, productId, variantId, inventoryItemId, productTitle, productImage, productHandle, storeDomain } = req.body;
 
-  if (!email || !productId) {
-    return res.status(400).json({ ok: false, message: 'Missing fields' });
+  if (!email || !productId || !variantId || !inventoryItemId || !storeDomain) {
+    return res.status(400).json({ ok: false, message: 'Missing required fields' });
   }
 
-  const entry = { name, email, productId, variantId, notified: false, storeDomain };
+  const entry = {
+    name, email, productId, variantId, inventoryItemId,
+    productTitle, productImage, productHandle,
+    notified: false, storeDomain
+  };
+
   data.push(entry);
   fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
 
@@ -37,23 +42,29 @@ app.post('/api/notify', (req, res) => {
   res.json({ ok: true });
 });
 
+
 // Optional: simulate stock update and send emails
 app.post('/api/stock-update', async (req, res) => {
-  const product = req.body;
-  console.log("Webhook Called, data:", product);
+  const update = req.body;
+  console.log("Webhook Called, data:", update);
 
-  const productId = String(product.id);
-  const productHandle = product.handle;
-  const productTitle = product.title || 'Product';
-  const productImage = product.image?.src || '';
+  const inventoryItemId = String(update.inventory_item_id);
+  const newQuantity = update.available;
 
-  // Find back-in-stock variants
-  const inStockVariants = (product.variants || []).filter(v => v.inventory_quantity > 0);
-  if (inStockVariants.length === 0) {
-    return res.json({ ok: true, message: 'No variants in stock.' });
+  if (newQuantity < 1) {
+    return res.json({ ok: true, message: 'Inventory not in stock.' });
   }
 
-  let notifiedCount = 0;
+  // Filter entries waiting for this inventory item
+  const matchingSubscribers = data.filter(entry =>
+    entry.variantId && !entry.notified && entry.inventoryItemId === inventoryItemId
+  );
+
+  if (matchingSubscribers.length === 0) {
+    console.log("No matching subscribers for inventory_item_id:", inventoryItemId);
+    return res.json({ ok: true, message: 'No matching subscribers.' });
+  }
+
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -62,60 +73,52 @@ app.post('/api/stock-update', async (req, res) => {
     }
   });
 
-  for (const variant of inStockVariants) {
-    const variantId = String(variant.id);
+  let notifiedCount = 0;
 
-    const matchingSubscribers = data.filter(entry =>
-      entry.productId === productId &&
-      entry.variantId === variantId &&
-      !entry.notified
-    );
+  for (const subscriber of matchingSubscribers) {
+    const productUrl = `https://${subscriber.storeDomain}/products/${subscriber.productHandle}?variant=${subscriber.variantId}`;
 
-    if (matchingSubscribers.length === 0) {
-      console.log("No matching subscribers to notify for variant:", variantId);
-      continue;
-    }
+    const htmlContent = `
+    <div style="font-family: 'Roboto', Arial, sans-serif; color: #2b2b2b; padding: 24px; max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px;">
+      <h2 style="color: #1a1a1a; font-size: 22px; margin-bottom: 8px;">${subscriber.productTitle || 'Product'} is Back in Stock!</h2>
+      <p style="font-size: 16px;">Hi ${subscriber.name || 'Customer'},</p>
+      <p style="font-size: 16px; margin-top: 0;">Good news! The product you were waiting for is now available again.</p>
 
-    for (const subscriber of matchingSubscribers) {
-      const productUrl = `https://${subscriber.storeDomain}/products/${productHandle}?variant=${subscriber.variantId}`;
-      const htmlContent = `
-      <div style="font-family: 'Roboto', Arial, sans-serif; color: #2b2b2b; padding: 24px; max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px;">
-        <h2 style="color: #1a1a1a; font-size: 22px; margin-bottom: 8px;">${productTitle} is Back in Stock!</h2>
-        <p style="font-size: 16px;">Hi ${subscriber.name || 'Customer'},</p>
-        <p style="font-size: 16px; margin-top: 0;">Good news! The product you were waiting for is now available again.</p>
-        
+      ${subscriber.productImage ? `
         <div style="text-align: center; margin: 20px 0;">
-          <img src="${productImage}" alt="${productTitle}" style="max-width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);" />
-        </div>
+          <img src="${subscriber.productImage}" alt="${subscriber.productTitle}" style="max-width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);" />
+        </div>` : ''}
 
-        <div style="text-align: center; margin: 25px 0;">
-          <a href="${productUrl}" 
-            style="background: #007bff; color: white; text-decoration: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; display: inline-block; box-shadow: 0 2px 4px rgba(0, 123, 255, 0.4);">
-            View Product
-          </a>
-        </div>
-
-        <p style="font-size: 14px; color: #777; text-align: right;">Thank you for your interest!<br/>– Your Shopify Store Team</p>
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${productUrl}" 
+          style="background: #007bff; color: white; text-decoration: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; display: inline-block; box-shadow: 0 2px 4px rgba(0, 123, 255, 0.4);">
+          View Product
+        </a>
       </div>
+
+      <p style="font-size: 14px; color: #777; text-align: right;">Thank you for your interest!<br/>– Your Shopify Store Team</p>
+    </div>
     `;
-      try {
-        await transporter.sendMail({
-          from: `"Shopify Store" <${process.env.EMAIL_USER}>`,
-          to: subscriber.email,
-          subject: `${productTitle} is back in stock!`,
-          html: htmlContent
-        });
-        subscriber.notified = true;
-        console.log(`Email sent to: ${subscriber.email}`);
-        notifiedCount++;
-      } catch (err) {
-        console.error(`Failed to send email to ${subscriber.email}:`, err);
-      }
+
+    try {
+      await transporter.sendMail({
+        from: `"Shopify Store" <${process.env.EMAIL_USER}>`,
+        to: subscriber.email,
+        subject: `${subscriber.productTitle || 'Product'} is back in stock!`,
+        html: htmlContent
+      });
+      subscriber.notified = true;
+      notifiedCount++;
+      console.log(`Email sent to: ${subscriber.email}`);
+    } catch (err) {
+      console.error(`Failed to send email to ${subscriber.email}:`, err);
     }
   }
+
   fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
+
 
 app.post('/webhook', (req, res) => {
   console.log('Received GitHub webhook push event for front-end');
