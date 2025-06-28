@@ -16,7 +16,7 @@ app.use(bodyParser.json());
 
 const FILE_PATH = __dirname + '/data.json';
 
-const STORES_FILE =  __dirname + "./stores.json";
+const STORES_FILE =  __dirname + "/stores.json";
 
 // Helper to load store data
 function loadStores() {
@@ -135,7 +135,6 @@ app.post('/api/stock-update', async (req, res) => {
 });
 app.post('/installed-update', (req, res) => {
   const { shop, accessToken } = req.body;
-  console.log("Webhook Called, data:", { shop, accessToken });
 
   let stores = loadStores();
   const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
