@@ -52,8 +52,8 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
       "Content-Type": "application/json"
     }
   });
-  const raw = await response.text();
   if (!response.ok) {
+    const raw = await response.text();
     console.error("❌ Shopify API Error Response:", raw);
     throw new Error(`Failed to fetch variant: ${response.statusText}`);
   }
