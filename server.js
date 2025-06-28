@@ -16,6 +16,21 @@ app.use(bodyParser.json());
 
 const FILE_PATH = __dirname + '/data.json';
 
+const STORES_FILE =  __dirname + "./stores.json";
+
+// Helper to load store data
+function loadStores() {
+  if (!fs.existsSync(STORES_FILE)) {
+    return [];
+  }
+  const rawData = fs.readFileSync(STORES_FILE);
+  return JSON.parse(rawData);
+}
+
+function saveStores(stores) {
+  fs.writeFileSync(STORES_FILE, JSON.stringify(stores, null, 2));
+}
+
 // Load existing data or initialize empty
 let data = [];
 if (fs.existsSync(FILE_PATH)) {
@@ -119,8 +134,32 @@ app.post('/api/stock-update', async (req, res) => {
   res.json({ ok: true, notified: notifiedCount });
 });
 app.post('/installed-update', (req, res) => {
-  const update = req.body;
-  console.log("Webhook Called, data:", update);
+  const { shop, accessToken } = req.body;
+  console.log("Webhook Called, data:", { shop, accessToken });
+
+  let stores = loadStores();
+  const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
+  const timestamp = new Date().toISOString();
+
+  if (existingStoreIndex !== -1) {
+    // Update existing store
+    stores[existingStoreIndex].accessToken = accessToken;
+    stores[existingStoreIndex].updatedAt = timestamp;
+    console.log(`🔄 Updated store: ${shop}`);
+  } else {
+    // Add new store
+    stores.push({
+      shop,
+      accessToken,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    console.log(`✅ Added new store: ${shop}`);
+  }
+
+  saveStores(stores);
+
+  res.status(200).send("Store saved/updated");
 });
 
 app.post('/webhook', (req, res) => {
