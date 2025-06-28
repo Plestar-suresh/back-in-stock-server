@@ -140,7 +140,7 @@ app.post('/api/stock-update', async (req, res) => {
 
       ${subscriber.productImage ? `
         <div style="text-align: center; margin: 20px 0;">
-          <img src="${subscriber.productImage}" alt="${subscriber.productTitle}" style="max-width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);" />
+          <img src="https:${subscriber.productImage}" alt="${subscriber.productTitle}" style="max-width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);" />
         </div>` : ''}
 
       <div style="text-align: center; margin: 25px 0;">
