@@ -111,7 +111,7 @@ app.post('/api/stock-update', async (req, res) => {
 
   // Filter entries waiting for this inventory item
   const matchingSubscribers = data.filter(entry =>
-    entry.variantId && !entry.notified && entry.inventoryItemId === inventoryItemId
+    entry.variantId && !entry.notified && String(entry.inventoryItemId) === inventoryItemId
   );
 
   if (matchingSubscribers.length === 0) {
