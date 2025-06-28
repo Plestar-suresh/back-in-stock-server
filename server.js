@@ -45,7 +45,7 @@ function getStoreToken(storeDomain) {
 
 // Fetch inventory item ID using variant ID
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
-  const url = `https://${storeDomain}/admin/api/2024-01/variants/${variantId}.json`;
+  const url = `https://${storeDomain}/admin/api/2025-04/variants/${variantId}.json`;
 
   const response = await fetch(url, {
     headers: {
