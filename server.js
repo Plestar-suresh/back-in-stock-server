@@ -118,7 +118,10 @@ app.post('/api/stock-update', async (req, res) => {
   fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
-
+app.post('/installed-update', (req, res) => {
+  const update = req.body;
+  console.log("Webhook Called, data:", update);
+});
 
 app.post('/webhook', (req, res) => {
   console.log('Received GitHub webhook push event for front-end');
