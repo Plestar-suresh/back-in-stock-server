@@ -45,9 +45,7 @@ function getStoreToken(storeDomain) {
 
 // Fetch inventory item ID using variant ID
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
-  console.log(storeDomain);
   const url = `https://${storeDomain}/admin/api/2025-07/variants/${variantId}.json`;
-  console.log(url);
   const response = await fetch(url, {
     headers: {
       "X-Shopify-Access-Token": accessToken,
@@ -56,7 +54,7 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch variant: ${response.statusText}`);
+    throw new Error(`Failed to fetch variant: ${response}`);
   }
 
   const json = await response.json();
