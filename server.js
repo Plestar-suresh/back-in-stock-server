@@ -16,7 +16,7 @@ app.use(bodyParser.json());
 
 const FILE_PATH = __dirname + '/data.json';
 
-const STORES_FILE =  __dirname + "/stores.json";
+const STORES_FILE = __dirname + "/stores.json";
 
 // Helper to load store data
 function loadStores() {
@@ -36,25 +36,59 @@ let data = [];
 if (fs.existsSync(FILE_PATH)) {
   data = JSON.parse(fs.readFileSync(FILE_PATH));
 }
+function getStoreToken(storeDomain) {
+  if (!fs.existsSync(STORES_FILE)) return null;
+  const stores = JSON.parse(fs.readFileSync(STORES_FILE));
+  const store = stores.find(s => s.shop === storeDomain);
+  return store ? store.accessToken : null;
+}
 
-app.post('/api/notify', (req, res) => {
-  const { name, email, productId, variantId, inventoryItemId, productTitle, productImage, productHandle, storeDomain } = req.body;
+// Fetch inventory item ID using variant ID
+async function getInventoryItemId(storeDomain, accessToken, variantId) {
+  const url = `https://${storeDomain}/admin/api/2024-01/variants/${variantId}.json`;
 
-  if (!email || !productId || !variantId || !inventoryItemId || !storeDomain) {
-    return res.status(400).json({ ok: false, message: 'Missing required fields' });
+  const response = await fetch(url, {
+    headers: {
+      "X-Shopify-Access-Token": accessToken,
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch variant: ${response.statusText}`);
   }
 
-  const entry = {
-    name, email, productId, variantId, inventoryItemId,
-    productTitle, productImage, productHandle,
-    notified: false, storeDomain
-  };
+  const json = await response.json();
+  return json?.variant?.inventory_item_id;
+}
 
-  data.push(entry);
-  fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
+app.post('/api/notify', async(req, res) => {
+  const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain } = req.body;
 
-  console.log("Notification request saved:", entry);
-  res.json({ ok: true });
+  if (!email || !productId || !variantId || !storeDomain) {
+    return res.status(400).json({ ok: false, message: 'Missing required fields' });
+  }
+  const accessToken = getStoreToken(storeDomain);
+  if (!accessToken) {
+    return res.status(400).json({ ok: false, message: 'Store access token not found' });
+  }
+  try {
+    const inventoryItemId = await getInventoryItemId(storeDomain, accessToken, variantId);
+    const entry = {
+      name, email, productId, variantId, inventoryItemId,
+      productTitle, productImage, productHandle,
+      notified: false, storeDomain
+    };
+
+    data.push(entry);
+    fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
+
+    console.log("Notification request saved:", entry);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error getting inventory item ID:", err);
+    res.status(500).json({ ok: false, message: "Failed to retrieve inventory item ID" });
+  }
 });
 
 
