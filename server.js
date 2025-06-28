@@ -59,7 +59,11 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
   }
 
   const json = await response.json();
-  return json?.variant?.inventory_item_id;
+  const variant = json?.variant;
+  return {
+    inventoryItemId: variant?.inventory_item_id,
+    variantTitle: variant?.title || ""
+  };
 }
 
 app.post('/api/notify', async(req, res) => {
@@ -70,17 +74,13 @@ app.post('/api/notify', async(req, res) => {
     return res.status(400).json({ ok: false, message: 'Missing required fields' });
   }
   const accessToken = getStoreToken(storeDomain);
-  console.log("Access token:", accessToken)
   if (!accessToken) {
-    console.log(`❌ No access token found for store: ${storeDomain}`);
     return res.status(400).json({ ok: false, message: 'Store access token not found' });
   }
   try {
-    console.log(`📡 Fetching inventory item ID for variant ${variantId} from ${storeDomain}...`);
-    const inventoryItemId = await getInventoryItemId(storeDomain, accessToken, variantId);
-    console.log(`✅ Retrieved inventory_item_id: ${inventoryItemId}`);
+    const { inventoryItemId, variantTitle } = await getInventoryItemId(storeDomain, accessToken, variantId);
     const entry = {
-      name, email, productId, variantId, inventoryItemId,
+      name, email, productId, variantId, inventoryItemId, variantTitle,
       productTitle, productImage, productHandle,
       notified: false, storeDomain
     };
