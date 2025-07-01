@@ -224,7 +224,7 @@ app.post('/webhook', (req, res) => {
     console.log(`${data.toString()}`);
   }); 
 
-  deploy.stderr.on('data', (data) => {
+  deploy.stderr.on('data', (data) => { 
     console.log(`${data.toString()}`);
   });
 
