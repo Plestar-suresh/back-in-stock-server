@@ -240,7 +240,7 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   console.log('MongoDB connected successfullly.');
 })
-
+ 
 module.exports = mongoose;
 const options = {
   key: fs.readFileSync('/etc/letsencrypt/live/apps.plestarinc.com/privkey.pem'),
