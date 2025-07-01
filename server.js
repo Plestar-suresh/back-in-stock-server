@@ -241,7 +241,7 @@ mongoose.connect(process.env.MONGO_URI, {
 }).catch(err => {
   console.error('❌ MongoDB connection error:', err);
 });
- 
+
 module.exports = mongoose;
 const options = {
   key: fs.readFileSync('/etc/letsencrypt/live/apps.plestarinc.com/privkey.pem'),
