@@ -222,12 +222,12 @@ app.post('/webhook', (req, res) => {
 
   deploy.stdout.on('data', (data) => {
     console.log(`${data.toString()}`);
-  });
+  }); 
 
   deploy.stderr.on('data', (data) => {
     console.log(`${data.toString()}`);
   });
-  
+
   deploy.on('close', (code) => {
     console.log(`Deployment process exited with code ${code}`);
     res.status(200).send('Deployment triggered');
