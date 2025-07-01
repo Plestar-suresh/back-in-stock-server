@@ -150,7 +150,7 @@ app.post('/api/stock-update', async (req, res) => {
     <div style="font-family: 'Roboto', Arial, sans-serif; color: #2b2b2b; padding: 24px; max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px;">
       <h2 style="color: #1a1a1a; font-size: 22px; margin-bottom: 8px;">${subscriber.productTitle || 'Product'} is Back in Stock!</h2>
       <p style="font-size: 16px;">Hi ${subscriber.name || 'Customer'},</p>
-      <p style="font-size: 16px; margin-top: 0;">Good news! The product you were waiting for is now available again.</p>
+      <p style="font-size: 16px; margin-top: 0;">Good news! The Product ${subscriber.variantTitle ? "variant <strong>"+subscriber.variantTitle : ''} you were waiting for is now available again.</p>
 
       ${subscriber.productImage ? `
         <div style="text-align: center; margin: 20px 0;">
