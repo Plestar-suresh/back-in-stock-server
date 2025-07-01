@@ -77,6 +77,20 @@ app.post('/api/notify', async(req, res) => {
   if (!accessToken) {
     return res.status(400).json({ ok: false, message: 'Store access token not found' });
   }
+  const alreadyExists = data.find(entry =>
+    entry.email === email &&
+    entry.productId === productId &&
+    entry.variantId === variantId &&
+    entry.notified === false &&
+    entry.storeDomain === storeDomain
+  );
+
+  if (alreadyExists) {
+    return res.status(200).json({
+      ok: false,
+      message: "You’ve already requested a notification for this product."
+    });
+  }
   try {
     const { inventoryItemId, variantTitle } = await getInventoryItemId(storeDomain, accessToken, variantId);
     const entry = {
