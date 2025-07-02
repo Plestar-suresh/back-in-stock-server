@@ -16,7 +16,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const NotificationRequest = require('./models/NotificationRequest');
-const { getCachedStoreToken } = require('./cache');
+const { getCachedStoreToken, updateStoreTokenCache } = require('./cache');
 const Store = require('./models/Store');
 
 const FILE_PATH = __dirname + '/data.json';
