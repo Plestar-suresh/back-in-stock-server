@@ -15,6 +15,9 @@ const PORT = process.env.PORT || 7000;
 app.use(cors());
 app.use(bodyParser.json());
 
+const NotificationRequest = require('./models/NotificationRequest');
+const { getCachedStoreToken } = require('./cache');
+
 const FILE_PATH = __dirname + '/data.json';
 
 const STORES_FILE = __dirname + "/stores.json";
@@ -74,17 +77,13 @@ app.post('/api/notify', async (req, res) => {
     console.log("❌ Missing required fields:", { email, productId, variantId, storeDomain });
     return res.status(400).json({ ok: false, message: 'Missing required fields' });
   }
-  const accessToken = getStoreToken(storeDomain);
+  const accessToken = getCachedStoreToken(storeDomain);
   if (!accessToken) {
     return res.status(400).json({ ok: false, message: 'Store access token not found' });
   }
-  const alreadyExists = data.find(entry =>
-    entry.email === email &&
-    entry.productId === productId &&
-    entry.variantId === variantId &&
-    entry.notified === false &&
-    entry.storeDomain === storeDomain
-  );
+  const alreadyExists = await NotificationRequest.findOne({
+    email, productId, variantId, storeDomain, notified: false
+  });
 
   if (alreadyExists) {
     return res.status(200).json({
@@ -94,16 +93,16 @@ app.post('/api/notify', async (req, res) => {
   }
   try {
     const { inventoryItemId, variantTitle } = await getInventoryItemId(storeDomain, accessToken, variantId);
-    const entry = {
+    await NotificationRequest.create({
       name, email, productId, variantId, inventoryItemId, variantTitle,
       productTitle, productImage, productHandle,
       notified: false, storeDomain
-    };
+    });
 
-    data.push(entry);
-    fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
+    //data.push(entry);
+    //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
 
-    console.log("Notification request saved:", entry);
+    //console.log("Notification request saved:", entry);
     res.json({ ok: true });
   } catch (err) {
     console.error("Error getting inventory item ID:", err);
@@ -125,10 +124,10 @@ app.post('/api/stock-update', async (req, res) => {
   }
 
   // Filter entries waiting for this inventory item
-  const matchingSubscribers = data.filter(entry =>
+  /*const matchingSubscribers = data.filter(entry =>
     entry.variantId && !entry.notified && String(entry.inventoryItemId) === inventoryItemId
-  );
-
+  );*/
+  const matchingSubscribers = await NotificationRequest.find({notified:true , inventoryItemId:inventoryItemId})
   if (matchingSubscribers.length === 0) {
     console.log("No matching subscribers for inventory_item_id:", inventoryItemId);
     return res.json({ ok: true, message: 'No matching subscribers.' });
@@ -177,6 +176,7 @@ app.post('/api/stock-update', async (req, res) => {
         html: htmlContent
       });
       subscriber.notified = true;
+      await NotificationRequest.findByIdAndUpdate(subscriber._id,{notified:true}, { new: true });
       notifiedCount++;
       console.log(`Email sent to: ${subscriber.email}`);
     } catch (err) {
@@ -184,17 +184,17 @@ app.post('/api/stock-update', async (req, res) => {
     }
   }
 
-  fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
+  //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
-app.post('/installed-update', (req, res) => {
+app.post('/installed-update', async(req, res) => {
   const { shop, accessToken } = req.body;
 
-  let stores = loadStores();
-  const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
+  //let stores = loadStores();
+  //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
   const timestamp = new Date().toISOString();
 
-  if (existingStoreIndex !== -1) {
+  /*if (existingStoreIndex !== -1) {
     // Update existing store
     stores[existingStoreIndex].accessToken = accessToken;
     stores[existingStoreIndex].updatedAt = timestamp;
@@ -210,7 +210,14 @@ app.post('/installed-update', (req, res) => {
     console.log(`✅ Added new store: ${shop}`);
   }
 
-  saveStores(stores);
+  saveStores(stores);*/
+  const updated = await Store.findOneAndUpdate(
+    { shop },
+    { accessToken, updatedAt: timestamp },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  updateStoreTokenCache(shop, accessToken);
 
   res.status(200).send("Store saved/updated");
 });
