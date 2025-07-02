@@ -84,7 +84,7 @@ app.post('/api/notify', async (req, res) => {
   const alreadyExists = await NotificationRequest.findOne({
     email, productId, variantId, storeDomain, notified: false
   });
-
+ 
   if (alreadyExists) {
     return res.status(200).json({
       ok: false,
