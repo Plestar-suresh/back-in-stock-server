@@ -93,6 +93,7 @@ app.post('/api/notify', async (req, res) => {
     });
   }
   try {
+    console.log("notify data:", storeDomain, accessToken, variantId)
     const { inventoryItemId, variantTitle } = await getInventoryItemId(storeDomain, accessToken, variantId);
     await NotificationRequest.create({
       name, email, productId, variantId, inventoryItemId, variantTitle,
