@@ -78,7 +78,7 @@ app.post('/api/notify', async (req, res) => {
     console.log("❌ Missing required fields:", { email, productId, variantId, storeDomain });
     return res.status(400).json({ ok: false, message: 'Missing required fields' });
   }
-  const accessToken = getCachedStoreToken(storeDomain);
+  const accessToken = await getCachedStoreToken(storeDomain);
   if (!accessToken) {
     return res.status(400).json({ ok: false, message: 'Store access token not found' });
   }
