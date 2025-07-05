@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 const NotificationRequest = require('./models/NotificationRequest');
 const { getCachedStoreToken, updateStoreTokenCache } = require('./cache');
 const Store = require('./models/Store');
-const { getCachedNotificationRequests, markNotifiedAndUpdateCache, addNotificationToCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
+const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
 
 const FILE_PATH = __dirname + '/data.json';
 
