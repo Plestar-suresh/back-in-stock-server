@@ -36,25 +36,26 @@ async function markNotifiedAndUpdateCache(id, inventoryItemId) {
   }
 }
 
-async function getCachedSingleNotification(email, productId, variantId, storeDomain, inventoryItemId) {
-  if (notificationCache[inventoryItemId]) {
-    return notificationCache[inventoryItemId].find(req =>
-      req.email === email &&
-      req.productId === productId &&
-      req.variantId === variantId &&
-      req.storeDomain === storeDomain &&
-      req.notified === false
-    );
-  }
+async function getCachedSingleNotification(email, variantId, storeDomain) {
+  const entries = Object.values(notificationCache).flat();
+
+  const match = entries.find(entry =>
+    entry.email === email &&
+    entry.variantId === variantId &&
+    entry.storeDomain === storeDomain &&
+    entry.notified === false
+  );
+
+  if (match) return match;
 
   return await NotificationRequest.findOne({
     email,
-    productId,
     variantId,
     storeDomain,
     notified: false
   }).lean();
 }
+
 
 
 module.exports = {

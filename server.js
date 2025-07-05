@@ -83,7 +83,7 @@ app.post('/api/notify', async (req, res) => {
   if (!accessToken) {
     return res.status(400).json({ ok: false, message: 'Store access token not found' });
   }
-  const alreadyExists = await getCachedSingleNotification(email, productId, variantId, storeDomain, inventoryItemId);
+  const alreadyExists = await getCachedSingleNotification(email, productId, variantId, storeDomain);
 
 
   if (alreadyExists) {
