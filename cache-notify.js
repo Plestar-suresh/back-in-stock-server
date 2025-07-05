@@ -36,11 +36,12 @@ async function markNotifiedAndUpdateCache(id, inventoryItemId) {
   }
 }
 
-async function getCachedSingleNotification(email, variantId, storeDomain) {
+async function getCachedSingleNotification(email, productId, variantId, storeDomain) {
   const entries = Object.values(notificationCache).flat();
 
   const match = entries.find(entry =>
     entry.email === email &&
+    entry.productId === productId &&
     entry.variantId === variantId &&
     entry.storeDomain === storeDomain &&
     entry.notified === false
