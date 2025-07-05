@@ -18,6 +18,7 @@ app.use(bodyParser.json());
 const NotificationRequest = require('./models/NotificationRequest');
 const { getCachedStoreToken, updateStoreTokenCache } = require('./cache');
 const Store = require('./models/Store');
+const { getCachedNotificationRequests, markNotifiedAndUpdateCache, addNotificationToCache, getCachedSingleNotification } = require('./cache-notify');
 
 const FILE_PATH = __dirname + '/data.json';
 
@@ -82,10 +83,9 @@ app.post('/api/notify', async (req, res) => {
   if (!accessToken) {
     return res.status(400).json({ ok: false, message: 'Store access token not found' });
   }
-  const alreadyExists = await NotificationRequest.findOne({
-    email, productId, variantId, storeDomain, notified: false
-  });
- 
+  const alreadyExists = await getCachedSingleNotification(email, productId, variantId, storeDomain, inventoryItemId);
+
+
   if (alreadyExists) {
     return res.status(200).json({
       ok: false,
@@ -93,9 +93,13 @@ app.post('/api/notify', async (req, res) => {
     });
   }
   try {
-    console.log("notify data:", storeDomain, accessToken, variantId)
     const { inventoryItemId, variantTitle } = await getInventoryItemId(storeDomain, accessToken, variantId);
-    await NotificationRequest.create({
+    /*await NotificationRequest.create({
+      name, email, productId, variantId, inventoryItemId, variantTitle,
+      productTitle, productImage, productHandle,
+      notified: false, storeDomain
+    });*/
+    const newRequest = await createNotificationAndCache({
       name, email, productId, variantId, inventoryItemId, variantTitle,
       productTitle, productImage, productHandle,
       notified: false, storeDomain
@@ -129,7 +133,8 @@ app.post('/api/stock-update', async (req, res) => {
   /*const matchingSubscribers = data.filter(entry =>
     entry.variantId && !entry.notified && String(entry.inventoryItemId) === inventoryItemId
   );*/
-  const matchingSubscribers = await NotificationRequest.find({notified:true , inventoryItemId:inventoryItemId})
+  //const matchingSubscribers = await NotificationRequest.find({ notified: true, inventoryItemId: inventoryItemId })
+  const matchingSubscribers = await getCachedNotificationRequests(inventoryItemId);
   if (matchingSubscribers.length === 0) {
     console.log("No matching subscribers for inventory_item_id:", inventoryItemId);
     return res.json({ ok: true, message: 'No matching subscribers.' });
@@ -178,7 +183,8 @@ app.post('/api/stock-update', async (req, res) => {
         html: htmlContent
       });
       subscriber.notified = true;
-      await NotificationRequest.findByIdAndUpdate(subscriber._id,{notified:true}, { new: true });
+      //await NotificationRequest.findByIdAndUpdate(subscriber._id, { notified: true }, { new: true });
+      await markNotifiedAndUpdateCache(subscriber._id, inventoryItemId);
       notifiedCount++;
       console.log(`Email sent to: ${subscriber.email}`);
     } catch (err) {
@@ -189,7 +195,7 @@ app.post('/api/stock-update', async (req, res) => {
   //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
-app.post('/installed-update', async(req, res) => {
+app.post('/installed-update', async (req, res) => {
   const { shop, accessToken } = req.body;
 
   //let stores = loadStores();
@@ -231,9 +237,9 @@ app.post('/webhook', (req, res) => {
 
   deploy.stdout.on('data', (data) => {
     console.log(`${data.toString()}`);
-  }); 
+  });
 
-  deploy.stderr.on('data', (data) => { 
+  deploy.stderr.on('data', (data) => {
     console.log(`${data.toString()}`);
   });
 
