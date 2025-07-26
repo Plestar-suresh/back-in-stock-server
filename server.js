@@ -120,7 +120,7 @@ app.post('/api/notify', async (req, res) => {
 // Optional: simulate stock update and send emails
 app.post('/api/stock-update', async (req, res) => {
   const update = req.body;
-  console.log("Webhook Called, data:", update);
+  //console.log("Webhook Called, data:", update);
 
   const inventoryItemId = String(update.inventory_item_id);
   const newQuantity = update.available;
