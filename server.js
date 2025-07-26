@@ -221,8 +221,11 @@ app.post('/installed-update', async (req, res) => {
   saveStores(stores);*/
   const updated = await Store.findOneAndUpdate(
     { shop },
-    { accessToken, updatedAt: timestamp, uninstall: false },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    {
+      $set: { accessToken, updatedAt: timestamp, uninstall: false },
+      $setOnInsert: { createdAt: timestamp }
+    },
+    { upsert: true, new: true }
   );
 
   updateStoreTokenCache(shop, accessToken);
@@ -255,7 +258,7 @@ app.post('/uninstalled-update', async (req, res) => {
   saveStores(stores);*/
   const updated = await Store.findOneAndUpdate(
     { shop },
-    {updatedAt: timestamp, uninstall: true, accessToken: "" },
+    { updatedAt: timestamp, uninstall: true, accessToken: "" },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
