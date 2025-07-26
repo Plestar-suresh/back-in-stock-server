@@ -4,7 +4,9 @@ const StoreSchema = new mongoose.Schema({
   shop: { type: String, required: true, unique: true },
   accessToken: { type: String, required: true },
   createdAt: String,
-  updatedAt: String
+  updatedAt: String,
+  uninstall: { type: Boolean, default: false }
+
 });
 
 module.exports = mongoose.model('Store', StoreSchema);

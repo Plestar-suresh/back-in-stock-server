@@ -227,7 +227,7 @@ app.post('/installed-update', async (req, res) => {
 
   updateStoreTokenCache(shop, accessToken);
 
-  res.status(200).send("Store saved/updated");
+  res.status(200).send("Store marked as installed");
 });
 app.post('/uninstalled-update', async (req, res) => {
   const { shop } = req.body;
@@ -255,14 +255,13 @@ app.post('/uninstalled-update', async (req, res) => {
   saveStores(stores);*/
   const updated = await Store.findOneAndUpdate(
     { shop },
-    {updatedAt: timestamp,
-      uninstall: true },
+    {updatedAt: timestamp, uninstall: true, accessToken: "" },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
   updateStoreTokenCache(shop, null);
 
-  res.status(200).send("Store saved/updated");
+  res.status(200).send("Store marked as uninstalled");
 });
 
 app.post('/webhook', (req, res) => {
