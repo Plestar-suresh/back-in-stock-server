@@ -221,11 +221,46 @@ app.post('/installed-update', async (req, res) => {
   saveStores(stores);*/
   const updated = await Store.findOneAndUpdate(
     { shop },
-    { accessToken, updatedAt: timestamp },
+    { accessToken, updatedAt: timestamp, uninstall: false },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
   updateStoreTokenCache(shop, accessToken);
+
+  res.status(200).send("Store saved/updated");
+});
+app.post('/uninstalled-update', async (req, res) => {
+  const { shop } = req.body;
+
+  //let stores = loadStores();
+  //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
+  const timestamp = new Date().toISOString();
+
+  /*if (existingStoreIndex !== -1) {
+    // Update existing store
+    stores[existingStoreIndex].accessToken = accessToken;
+    stores[existingStoreIndex].updatedAt = timestamp;
+    console.log(`🔄 Updated store: ${shop}`);
+  } else {
+    // Add new store
+    stores.push({
+      shop,
+      accessToken,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    console.log(`✅ Added new store: ${shop}`);
+  }
+
+  saveStores(stores);*/
+  const updated = await Store.findOneAndUpdate(
+    { shop },
+    {updatedAt: timestamp,
+      uninstall: true },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  updateStoreTokenCache(shop, null);
 
   res.status(200).send("Store saved/updated");
 });
