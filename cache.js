@@ -32,7 +32,7 @@ function updateStoreTokenCache(domain, token) {
 const updateStoreFrontTokenCache = async(domain, token)=> {
   storefrontTokenCache[domain] = token;
   await Store.updateOne(
-      { shop },
+      { domain },
       { $set: { storefrontAccessToken: storefrontToken } },
       { upsert: true }
     );
