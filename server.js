@@ -199,6 +199,9 @@ app.post('/api/stock-update', async (req, res) => {
 app.post('/storefrontAPI', async (req, res) => {
   const { shop } = req.body;
   const accessToken = await getCachedStoreToken(shop);
+  if (!accessToken) {
+    return res.status(400).json({ error: 'Access token not found for this shop' });
+  }
   const url = `https://${shop}/admin/api/2025-07/graphql.json`;
 
   const query = `
@@ -234,7 +237,7 @@ app.post('/storefrontAPI', async (req, res) => {
   }, {
     headers: {
       'Content-Type': 'application/json',
-      'X-Shopify-Access-Token': accessToken
+      'X-Shopify-Access-Token': accessToken.trim()
     }
   })
     .then(response => {
