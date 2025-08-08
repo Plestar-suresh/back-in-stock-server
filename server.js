@@ -16,7 +16,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const NotificationRequest = require('./models/NotificationRequest');
-const { getCachedStoreToken, updateStoreTokenCache } = require('./cache');
+const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, getCachedStorefrontToken } = require('./cache');
 const Store = require('./models/Store');
 const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
 const { default: axios } = require('axios');
@@ -198,50 +198,65 @@ app.post('/api/stock-update', async (req, res) => {
 });
 app.post('/storefrontAPI', async (req, res) => {
   const { shop } = req.body;
-  const accessToken = await getCachedStoreToken(shop);
-  if (!accessToken) {
-    return res.status(400).json({ error: 'Access token not found for this shop' });
-  }
   try {
-    const url = `https://${shop}/admin/api/2025-07/graphql.json`;
-
-    const query = `
-  mutation StorefrontAccessTokenCreate($input: StorefrontAccessTokenInput!) {
-    storefrontAccessTokenCreate(input: $input) {
-      userErrors {
-        field
-        message
-      }
-      shop {
-        id
-      }
-      storefrontAccessToken {
-        accessScopes {
-          handle
-        }
-        accessToken
-        title
-      }
+    const accessToken = await getCachedStoreToken(shop);
+    if (!accessToken) {
+      return res.status(400).json({ error: 'Access token not found for this shop' });
     }
-  }
-`;
+    const storefrontToken = await getCachedStorefrontToken(shop);
+    if (!storefrontToken) {
 
-    const variables = {
-      input: {
-        title: "New Storefront Access Token"
-      }
-    };
+      const url = `https://${shop}/admin/api/2025-07/graphql.json`;
 
-    const response = await axios.post(url, {
-      query,
-      variables
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': accessToken.trim()
+      const query = `
+      mutation StorefrontAccessTokenCreate($input: StorefrontAccessTokenInput!) {
+        storefrontAccessTokenCreate(input: $input) {
+          userErrors {
+            field
+            message
+          }
+          shop {
+            id
+          }
+          storefrontAccessToken {
+            accessScopes {
+              handle
+            }
+            accessToken
+            title
+          }
+        }
       }
-    });
-    res.json(response?.data);
+    `;
+
+      const variables = {
+        input: {
+          title: "New Storefront Access Token"
+        }
+      };
+
+      const response = await axios.post(url, {
+        query,
+        variables
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': accessToken.trim()
+        }
+      });
+      const data = response.data.data?.storefrontAccessTokenCreate;
+
+      if (data.userErrors.length > 0) {
+        return res.status(400).json({ errors: data.userErrors });
+      }
+
+      storefrontToken = data.storefrontAccessToken?.accessToken;
+    }
+    if (!storefrontToken) {
+      return res.status(500).json({ error: 'Failed to create storefront access token' });
+    }
+    await updateStoreFrontTokenCache(shop, storefrontToken);
+    res.json(storefrontToken);
   } catch (error) {
     console.error("Error:", error.response?.data || error.message);
     res.status(500).json({ error: error.message });
