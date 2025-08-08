@@ -202,9 +202,10 @@ app.post('/storefrontAPI', async (req, res) => {
   if (!accessToken) {
     return res.status(400).json({ error: 'Access token not found for this shop' });
   }
-  const url = `https://${shop}/admin/api/2025-07/graphql.json`;
+  try {
+    const url = `https://${shop}/admin/api/2025-07/graphql.json`;
 
-  const query = `
+    const query = `
   mutation StorefrontAccessTokenCreate($input: StorefrontAccessTokenInput!) {
     storefrontAccessTokenCreate(input: $input) {
       userErrors {
@@ -225,27 +226,26 @@ app.post('/storefrontAPI', async (req, res) => {
   }
 `;
 
-  const variables = {
-    input: {
-      title: "New Storefront Access Token"
-    }
-  };
+    const variables = {
+      input: {
+        title: "New Storefront Access Token"
+      }
+    };
 
-  axios.post(url, {
-    query,
-    variables
-  }, {
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Access-Token': accessToken.trim()
-    }
-  })
-    .then(response => {
-      console.log("Response:", JSON.stringify(response.data, null, 2));
-    })
-    .catch(error => {
-      console.error("Error:", error.response?.data || error.message);
+    const response = await axios.post(url, {
+      query,
+      variables
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': accessToken.trim()
+      }
     });
+    res.json(response?.data);
+  } catch (error) {
+    console.error("Error:", error.response?.data || error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.post('/installed-update', async (req, res) => {
