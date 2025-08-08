@@ -19,6 +19,7 @@ const NotificationRequest = require('./models/NotificationRequest');
 const { getCachedStoreToken, updateStoreTokenCache } = require('./cache');
 const Store = require('./models/Store');
 const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
+const { default: axios } = require('axios');
 
 const FILE_PATH = __dirname + '/data.json';
 
