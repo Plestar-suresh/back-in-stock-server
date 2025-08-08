@@ -195,6 +195,55 @@ app.post('/api/stock-update', async (req, res) => {
   //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
+app.post('/storefrontAPI', async (req, res) => {
+  const { shop } = req.body;
+  const accessToken = await getCachedStoreToken;
+  const url = `https://${shop}/admin/api/2025-07/graphql.json`;
+
+  const query = `
+  mutation StorefrontAccessTokenCreate($input: StorefrontAccessTokenInput!) {
+    storefrontAccessTokenCreate(input: $input) {
+      userErrors {
+        field
+        message
+      }
+      shop {
+        id
+      }
+      storefrontAccessToken {
+        accessScopes {
+          handle
+        }
+        accessToken
+        title
+      }
+    }
+  }
+`;
+
+  const variables = {
+    input: {
+      title: "New Storefront Access Token"
+    }
+  };
+
+  axios.post(url, {
+    query,
+    variables
+  }, {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': accessToken
+    }
+  })
+    .then(response => {
+      console.log("Response:", JSON.stringify(response.data, null, 2));
+    })
+    .catch(error => {
+      console.error("Error:", error.response?.data || error.message);
+    });
+});
+
 app.post('/installed-update', async (req, res) => {
   const { shop, accessToken } = req.body;
 
