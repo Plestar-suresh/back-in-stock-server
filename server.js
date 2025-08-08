@@ -198,7 +198,7 @@ app.post('/api/stock-update', async (req, res) => {
 });
 app.post('/storefrontAPI', async (req, res) => {
   const { shop } = req.body;
-  const accessToken = await getCachedStoreToken;
+  const accessToken = await getCachedStoreToken(shop);
   const url = `https://${shop}/admin/api/2025-07/graphql.json`;
 
   const query = `
