@@ -203,7 +203,7 @@ app.post('/storefrontAPI', async (req, res) => {
     if (!accessToken) {
       return res.status(400).json({ error: 'Access token not found for this shop' });
     }
-    const storefrontToken = await getCachedStorefrontToken(shop);
+    let storefrontToken = await getCachedStorefrontToken(shop);
     if (!storefrontToken) {
 
       const url = `https://${shop}/admin/api/2025-07/graphql.json`;
