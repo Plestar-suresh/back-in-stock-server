@@ -24,31 +24,9 @@ const { default: axios } = require('axios');
 const FILE_PATH = __dirname + '/data.json';
 
 const STORES_FILE = __dirname + "/stores.json";
-
-// Helper to load store data
-function loadStores() {
-  if (!fs.existsSync(STORES_FILE)) {
-    return [];
-  }
-  const rawData = fs.readFileSync(STORES_FILE);
-  return JSON.parse(rawData);
-}
-
-function saveStores(stores) {
-  fs.writeFileSync(STORES_FILE, JSON.stringify(stores, null, 2));
-}
-
-// Load existing data or initialize empty
-let data = [];
-if (fs.existsSync(FILE_PATH)) {
-  data = JSON.parse(fs.readFileSync(FILE_PATH));
-}
-function getStoreToken(storeDomain) {
-  if (!fs.existsSync(STORES_FILE)) return null;
-  const stores = JSON.parse(fs.readFileSync(STORES_FILE));
-  const store = stores.find(s => s.shop === storeDomain);
-  return store ? store.accessToken : null;
-}
+app.use("/api/*", shopify.validateAuthenticatedSession(), (req, res, next) => {
+  next();
+});
 
 // Fetch inventory item ID using variant ID
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
@@ -196,7 +174,7 @@ app.post('/api/stock-update', async (req, res) => {
   //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
-app.post('/storefrontAPI', async (req, res) => {
+app.post('/api/storefrontAPI', async (req, res) => {
   const { shop } = req.body;
   try {
     const accessToken = await getCachedStoreToken(shop);
@@ -263,7 +241,7 @@ app.post('/storefrontAPI', async (req, res) => {
   }
 });
 
-app.post('/installed-update', async (req, res) => {
+app.post('/api/installed-update', async (req, res) => {
   const { shop, accessToken } = req.body;
 
   //let stores = loadStores();
@@ -300,7 +278,7 @@ app.post('/installed-update', async (req, res) => {
 
   res.status(200).send("Store marked as installed");
 });
-app.post('/uninstalled-update', async (req, res) => {
+app.post('/api/uninstalled-update', async (req, res) => {
   const { shop } = req.body;
 
   //let stores = loadStores();
