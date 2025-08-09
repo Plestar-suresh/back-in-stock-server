@@ -20,6 +20,7 @@ const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, 
 const Store = require('./models/Store');
 const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
 const { default: axios } = require('axios');
+const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 
 // Fetch inventory item ID using variant ID
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
