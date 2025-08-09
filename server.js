@@ -51,7 +51,7 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
   };
 }
 
-app.post('/api/notify', async (req, res) => {
+app.post('/api/notify', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
   const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain } = req.body;
 
   if (!email || !productId || !variantId || !storeDomain) {
@@ -97,7 +97,7 @@ app.post('/api/notify', async (req, res) => {
 
 
 // Optional: simulate stock update and send emails
-app.post('/api/stock-update', async (req, res) => {
+app.post('/api/stock-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
   const update = req.body;
   //console.log("Webhook Called, data:", update);
 
@@ -174,7 +174,7 @@ app.post('/api/stock-update', async (req, res) => {
   //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
-app.post('/api/storefrontAPI', async (req, res) => {
+app.post('/api/storefrontAPI', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
   const { shop } = req.body;
   try {
     const accessToken = await getCachedStoreToken(shop);
@@ -241,7 +241,7 @@ app.post('/api/storefrontAPI', async (req, res) => {
   }
 });
 
-app.post('/api/installed-update', async (req, res) => {
+app.post('/api/installed-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
   const { shop, accessToken } = req.body;
 
   //let stores = loadStores();
@@ -278,7 +278,7 @@ app.post('/api/installed-update', async (req, res) => {
 
   res.status(200).send("Store marked as installed");
 });
-app.post('/api/uninstalled-update', async (req, res) => {
+app.post('/api/uninstalled-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
   const { shop } = req.body;
 
   //let stores = loadStores();

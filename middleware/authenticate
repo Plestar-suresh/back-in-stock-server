@@ -1,0 +1,35 @@
+import crypto from "crypto";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const authenticateShopifyWebhook = (req, res, next) => {
+  const hmacHeader = req.get("X-Shopify-Hmac-Sha256");
+
+  if (!hmacHeader) {
+    return res
+      .status(401)
+      .json({ response: "error", message: "Access denied. No token provided." });
+  }
+
+  try {
+    const generatedHmac = crypto
+      .createHmac("sha256", process.env.SHOPIFY_API_SECRET)
+      .update(req.body, "utf8") // req.body must be raw buffer
+      .digest("base64");
+
+    if (generatedHmac === hmacHeader) {
+      return next();
+    }
+
+    return res
+      .status(401)
+      .json({ response: "error", message: "Access denied. Invalid token." });
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ response: "error", message: "Error validating request." });
+  }
+};
+
+export default authenticateShopifyWebhook;
