@@ -21,13 +21,6 @@ const Store = require('./models/Store');
 const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
 const { default: axios } = require('axios');
 
-const FILE_PATH = __dirname + '/data.json';
-
-const STORES_FILE = __dirname + "/stores.json";
-app.use("/api/*", shopify.validateAuthenticatedSession(), (req, res, next) => {
-  next();
-});
-
 // Fetch inventory item ID using variant ID
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
   const url = `https://${storeDomain}/admin/api/2025-07/variants/${variantId}.json`;
