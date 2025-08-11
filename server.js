@@ -235,8 +235,9 @@ app.post('/api/storefrontAPI', bodyParser.raw({ type: "application/json" }), aut
   }
 });
 
-app.post('/api/installed-update', authenticateShopifyWebhook, async (req, res) => {
-  const { shop, accessToken } = req.body;
+app.post('/api/installed-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
+  const data = JSON.parse(req.body.toString('utf8')); 
+    const { shop, accessToken } = data;
 
   //let stores = loadStores();
   //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
