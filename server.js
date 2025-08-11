@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 7000;
 
 app.use(cors());
-app.use(bodyParser.json());
+//app.use(bodyParser.json());
 
 const NotificationRequest = require('./models/NotificationRequest');
 const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, getCachedStorefrontToken } = require('./cache');
