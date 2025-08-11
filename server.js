@@ -9,7 +9,11 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 
-const app = express();
+const app = express(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 const PORT = process.env.PORT || 7000;
 
 app.use(cors());
