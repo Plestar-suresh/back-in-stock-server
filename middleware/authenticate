@@ -15,7 +15,7 @@ const authenticateShopifyWebhook = (req, res, next) => {
   try {
     const generatedHmac = crypto
       .createHmac("sha256", process.env.API_SECRET)
-      .update(req.body) // req.body must be raw buffer
+      .update(req.body, "utf8") // req.body must be raw buffer
       .digest("base64");
 
     if (generatedHmac === hmacHeader) {
