@@ -235,7 +235,7 @@ app.post('/api/storefrontAPI', bodyParser.raw({ type: "application/json" }), aut
   }
 });
 
-app.post('/api/installed-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
+app.post('/api/installed-update', authenticateShopifyWebhook, async (req, res) => {
   const { shop, accessToken } = req.body;
 
   //let stores = loadStores();
