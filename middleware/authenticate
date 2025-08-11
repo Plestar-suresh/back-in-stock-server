@@ -28,7 +28,7 @@ const authenticateShopifyWebhook = (req, res, next) => {
   } catch (error) {
     return res
       .status(400)
-      .json({ response: "error", message: "Error validating request." });
+      .json({ response: "error", message: "Error validating request." , error});
   }
 };
 
