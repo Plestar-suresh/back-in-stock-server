@@ -13,8 +13,12 @@ const authenticateShopifyWebhook = (req, res, next) => {
   }
 
   try {
+    const apiSecret = process.env.API_SECRET;
+    if (!apiSecret) {
+      throw new Error("API_SECRET environment variable is not set");
+    }
     const generatedHmac = crypto
-      .createHmac("sha256", process.env.API_SECRET)
+      .createHmac("sha256", apiSecret)
       .update(req.body) // req.body must be raw buffer
       .digest("base64");
 
@@ -28,7 +32,7 @@ const authenticateShopifyWebhook = (req, res, next) => {
   } catch (error) {
     return res
       .status(400)
-      .json({ response: "error", message: "Error validating request." , error});
+      .json({ response: "error", message: "Error validating request.", error });
   }
 };
 

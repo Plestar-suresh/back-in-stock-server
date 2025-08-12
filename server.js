@@ -19,7 +19,7 @@ const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSing
 const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 
-const webhookRouter = express.Router(); // Use express.Router() instead of a new express() instance
+const webhookRouter = express.Router();
 webhookRouter.use(bodyParser.raw({ type: 'application/json' }));
 webhookRouter.use(authenticateShopifyWebhook);
 
