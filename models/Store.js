@@ -9,5 +9,6 @@ const StoreSchema = new mongoose.Schema({
   uninstall: { type: Boolean, default: false }
 
 });
+StoreSchema.index({ shop: 1, app: 1 }, { unique: true });
 
 module.exports = mongoose.model('Store', StoreSchema);
