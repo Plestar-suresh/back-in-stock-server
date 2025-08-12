@@ -45,8 +45,8 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
   };
 }
 
-app.post('/api/notify', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
-  const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain, app } = JSON.parse(req.body.toString("utf8"));
+app.post('/api/notify', async (req, res) => {
+  const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain, app } = req.body;
 
   if (!email || !productId || !variantId || !storeDomain || !app) {
     console.log("❌ Missing required fields:", { email, productId, variantId, storeDomain });
