@@ -171,7 +171,15 @@ app.post('/api/stock-update', async (req, res) => {
 });
 
 webhookRouter.post('/api/storefrontAPI', async (req, res) => {
-  const { shop, app: appName } = JSON.parse(req.body.toString("utf8"));
+  let data;
+  if (Buffer.isBuffer(req.body)) {
+    data = JSON.parse(req.body.toString('utf8'));
+  } else if (typeof req.body === 'string') {
+    data = JSON.parse(req.body);
+  } else {
+    data = req.body; // already parsed object
+  }
+  const { shop, app: appName } = data;
   if (!shop || !appName) {
     return res.status(400).json({ error: 'Missing shop or app in request body' });
   }
@@ -241,7 +249,14 @@ webhookRouter.post('/api/storefrontAPI', async (req, res) => {
 });
 
 webhookRouter.post('/api/installed-update', async (req, res) => {
-  const data = JSON.parse(req.body.toString('utf8'));
+  let data;
+  if (Buffer.isBuffer(req.body)) {
+    data = JSON.parse(req.body.toString('utf8'));
+  } else if (typeof req.body === 'string') {
+    data = JSON.parse(req.body);
+  } else {
+    data = req.body; // already parsed object
+  }
   const { shop, accessToken, app: appName } = data;
   console.log(`Install webhook for ${shop} - App: ${appName}`);
   //let stores = loadStores();
@@ -279,7 +294,14 @@ webhookRouter.post('/api/installed-update', async (req, res) => {
   res.status(200).send("Store marked as installed");
 });
 webhookRouter.post('/api/uninstalled-update', async (req, res) => {
-  const data = JSON.parse(req.body.toString('utf8'));
+  let data;
+  if (Buffer.isBuffer(req.body)) {
+    data = JSON.parse(req.body.toString('utf8'));
+  } else if (typeof req.body === 'string') {
+    data = JSON.parse(req.body);
+  } else {
+    data = req.body; // already parsed object
+  }
   const { shop, app: appName } = data;
 
   console.log(`Uninstall webhook for ${shop} - App: ${appName}`);
