@@ -281,9 +281,9 @@ webhookRouter.post('/api/installed-update', async (req, res) => {
 
   saveStores(stores);*/
   const updated = await Store.findOneAndUpdate(
-    { shop, appName },
+    { shop, app: appName },
     {
-      $set: { accessToken, updatedAt: timestamp, uninstall: false, appName },
+      $set: { accessToken, updatedAt: timestamp, uninstall: false, app: appName },
       $setOnInsert: { createdAt: timestamp }
     },
     { upsert: true, new: true }
@@ -326,7 +326,7 @@ webhookRouter.post('/api/uninstalled-update', async (req, res) => {
 
   saveStores(stores);*/
   const updated = await Store.findOneAndUpdate(
-    { shop, appName },
+    { shop, app:appName },
     { updatedAt: timestamp, uninstall: true, accessToken: "" },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
