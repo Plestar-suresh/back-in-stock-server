@@ -17,9 +17,15 @@ const authenticateShopifyWebhook = (req, res, next) => {
     if (!apiSecret) {
       throw new Error("API_SECRET environment variable is not set");
     }
+    const bodyBuffer = Buffer.isBuffer(req.body)
+      ? req.body
+      : Buffer.from(
+          typeof req.body === "string" ? req.body : JSON.stringify(req.body),
+          "utf8"
+        );
     const generatedHmac = crypto
       .createHmac("sha256", apiSecret)
-      .update(req.body) // req.body must be raw buffer
+      .update(bodyBuffer) // req.body must be raw buffer
       .digest("base64");
 
     if (generatedHmac === hmacHeader) {
