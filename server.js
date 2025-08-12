@@ -7,13 +7,17 @@ const https = require('https');
 const { spawn } = require('child_process');
 const mongoose = require('mongoose');
 require('dotenv').config();
-
-const app = express();
 const PORT = process.env.PORT || 7000;
 
+const app = express();
 app.use(cors());
-
 app.use(express.json());
+
+const webhookRouter = express();
+webhookRouter.use(bodyParser.raw({ type: 'application/json' }));
+webhookRouter.use(cors());
+webhookRouter.use(authenticateShopifyWebhook);
+
 const NotificationRequest = require('./models/NotificationRequest');
 const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, getCachedStorefrontToken } = require('./cache');
 const Store = require('./models/Store');
@@ -167,9 +171,6 @@ app.post('/api/stock-update', async (req, res) => {
   //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
-const webhookRouter = express.Router();
-webhookRouter.use(bodyParser.raw({ type: 'application/json' }));
-webhookRouter.use(authenticateShopifyWebhook);
 
 webhookRouter.post('/api/storefrontAPI', async (req, res) => {
   const { shop, app: appName } = JSON.parse(req.body.toString("utf8"));
