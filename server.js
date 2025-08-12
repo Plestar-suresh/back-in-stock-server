@@ -46,7 +46,7 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
 }
 
 app.post('/api/notify', async (req, res) => {
-  console.log(req.body);
+  app.use(express.json());
   const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain, app } = req.body;
 
   if (!email || !productId || !variantId || !storeDomain || !app) {
@@ -93,6 +93,7 @@ app.post('/api/notify', async (req, res) => {
 
 // Optional: simulate stock update and send emails
 app.post('/api/stock-update', async (req, res) => {
+  app.use(express.json());
   const update = req.body;
   //console.log("Webhook Called, data:", update);
 
