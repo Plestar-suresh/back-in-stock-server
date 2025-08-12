@@ -19,9 +19,8 @@ const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSing
 const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 
-const webhookRouter = express();
+const webhookRouter = express.Router(); // Use express.Router() instead of a new express() instance
 webhookRouter.use(bodyParser.raw({ type: 'application/json' }));
-webhookRouter.use(cors());
 webhookRouter.use(authenticateShopifyWebhook);
 
 const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2025-07';
@@ -333,6 +332,7 @@ app.post('/webhook', (req, res) => {
     res.status(200).send('Deployment triggered');
   });
 });
+app.use(webhookRouter)
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
