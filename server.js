@@ -13,17 +13,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const webhookRouter = express();
-webhookRouter.use(bodyParser.raw({ type: 'application/json' }));
-webhookRouter.use(cors());
-webhookRouter.use(authenticateShopifyWebhook);
-
-const NotificationRequest = require('./models/NotificationRequest');
 const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, getCachedStorefrontToken } = require('./cache');
 const Store = require('./models/Store');
 const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
 const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
+
+const webhookRouter = express();
+webhookRouter.use(bodyParser.raw({ type: 'application/json' }));
+webhookRouter.use(cors());
+webhookRouter.use(authenticateShopifyWebhook);
 
 const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2025-07';
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
