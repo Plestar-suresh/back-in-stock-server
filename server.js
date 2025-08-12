@@ -276,7 +276,7 @@ app.post('/api/installed-update', bodyParser.raw({ type: "application/json" }), 
 app.post('/api/uninstalled-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
   const { shop } = req.body;
 
-  //let stores = loadStores();
+  console.log("Uninstall webhook for "+shop);
   //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
   const timestamp = new Date().toISOString();
 
