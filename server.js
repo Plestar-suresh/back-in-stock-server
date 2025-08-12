@@ -239,7 +239,7 @@ app.post('/api/storefrontAPI', authenticateShopifyWebhook, async (req, res) => {
 app.post('/api/installed-update', authenticateShopifyWebhook, async (req, res) => {
   const data = JSON.parse(req.body.toString('utf8'));
   const { shop, accessToken, app: appName } = data;
-
+  console.log(`Install webhook for ${shop} - App: ${appName}`);
   //let stores = loadStores();
   //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
   const timestamp = new Date().toISOString();
