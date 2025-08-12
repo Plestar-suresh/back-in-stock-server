@@ -12,12 +12,8 @@ const app = express();
 const PORT = process.env.PORT || 7000;
 
 app.use(cors());
-const rawBodySaver = (req, res, buf, encoding) => {
-  if (buf && buf.length) {
-    req.rawBody = buf.toString(encoding || 'utf8');
-  }
-};
-app.use(express.json({ verify: rawBodySaver }));
+
+app.use(express.json());
 const NotificationRequest = require('./models/NotificationRequest');
 const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, getCachedStorefrontToken } = require('./cache');
 const Store = require('./models/Store');
@@ -171,7 +167,11 @@ app.post('/api/stock-update', async (req, res) => {
   //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
-app.post('/api/storefrontAPI', authenticateShopifyWebhook, async (req, res) => {
+const webhookRouter = express.Router();
+webhookRouter.use(bodyParser.raw({ type: 'application/json' }));
+webhookRouter.use(authenticateShopifyWebhook);
+
+webhookRouter.post('/api/storefrontAPI', async (req, res) => {
   const { shop, app: appName } = JSON.parse(req.body.toString("utf8"));
   if (!shop || !appName) {
     return res.status(400).json({ error: 'Missing shop or app in request body' });
@@ -241,7 +241,7 @@ app.post('/api/storefrontAPI', authenticateShopifyWebhook, async (req, res) => {
   }
 });
 
-app.post('/api/installed-update', authenticateShopifyWebhook, async (req, res) => {
+webhookRouter.post('/api/installed-update', async (req, res) => {
   const data = JSON.parse(req.body.toString('utf8'));
   const { shop, accessToken, app: appName } = data;
   console.log(`Install webhook for ${shop} - App: ${appName}`);
@@ -279,7 +279,7 @@ app.post('/api/installed-update', authenticateShopifyWebhook, async (req, res) =
 
   res.status(200).send("Store marked as installed");
 });
-app.post('/api/uninstalled-update', authenticateShopifyWebhook, async (req, res) => {
+webhookRouter.post('/api/uninstalled-update', async (req, res) => {
   const data = JSON.parse(req.body.toString('utf8'));
   const { shop, app: appName } = data;
 

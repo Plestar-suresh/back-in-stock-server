@@ -13,14 +13,22 @@ const authenticateShopifyWebhook = (req, res, next) => {
   }
 
   try {
+    const rawBody = req.body;
+    if (!rawBody) {
+      return res.status(400).json({ message: "Invalid request body." });
+    }
+
     const generatedHmac = crypto
       .createHmac("sha256", process.env.API_SECRET)
-      .update(req.body) // req.body must be raw buffer
+      .update(rawBody) // Use the raw buffer
       .digest("base64");
 
     if (generatedHmac === hmacHeader) {
+      // It's valid, now you can parse the body for the next handlers
+      req.body = JSON.parse(rawBody.toString('utf8'));
       return next();
     }
+
 
     return res
       .status(401)
