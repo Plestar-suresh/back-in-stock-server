@@ -12,18 +12,17 @@ const app = express();
 const PORT = process.env.PORT || 7000;
 
 app.use(cors());
-//app.use(bodyParser.json());
 app.use(express.json());
 const NotificationRequest = require('./models/NotificationRequest');
 const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, getCachedStorefrontToken } = require('./cache');
 const Store = require('./models/Store');
 const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
 const { default: axios } = require('axios');
-const { default: authenticateShopifyWebhook } = require('./middleware/authenticate'); 
+const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 
-// Fetch inventory item ID using variant ID
+const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2025-07';
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
-  const url = `https://${storeDomain}/admin/api/2025-07/variants/${variantId}.json`;
+  const url = `https://${storeDomain}/admin/api/${SHOPIFY_API_VERSION}/variants/${variantId}.json`;
   const response = await fetch(url, {
     headers: {
       "X-Shopify-Access-Token": accessToken,
@@ -85,7 +84,7 @@ app.post('/api/notify', async (req, res) => {
   } catch (err) {
     console.error("Error getting inventory item ID:", err);
     res.status(500).json({ ok: false, message: "Failed to retrieve inventory item ID" });
-  } 
+  }
 });
 
 
@@ -167,11 +166,11 @@ app.post('/api/stock-update', async (req, res) => {
   //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
-app.post('/api/storefrontAPI',  authenticateShopifyWebhook, async (req, res) => {
+app.post('/api/storefrontAPI', authenticateShopifyWebhook, async (req, res) => {
   const { shop, app: appName } = JSON.parse(req.body.toString("utf8"));
   if (!shop || !appName) {
-      return res.status(400).json({ error: 'Missing shop or app in request body' });
-    }
+    return res.status(400).json({ error: 'Missing shop or app in request body' });
+  }
   try {
     const accessToken = await getCachedStoreToken(shop, appName);
     if (!accessToken) {
@@ -180,7 +179,7 @@ app.post('/api/storefrontAPI',  authenticateShopifyWebhook, async (req, res) => 
     let storefrontToken = await getCachedStorefrontToken(shop, appName);
     if (!storefrontToken) {
 
-      const url = `https://${shop}/admin/api/2025-07/graphql.json`;
+      const url = `https://${shop}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`;
 
       const query = `
       mutation StorefrontAccessTokenCreate($input: StorefrontAccessTokenInput!) {
@@ -237,9 +236,9 @@ app.post('/api/storefrontAPI',  authenticateShopifyWebhook, async (req, res) => 
   }
 });
 
-app.post('/api/installed-update',  authenticateShopifyWebhook, async (req, res) => {
-  const data = JSON.parse(req.body.toString('utf8')); 
-    const { shop, accessToken, app:appName } = data;
+app.post('/api/installed-update', authenticateShopifyWebhook, async (req, res) => {
+  const data = JSON.parse(req.body.toString('utf8'));
+  const { shop, accessToken, app: appName } = data;
 
   //let stores = loadStores();
   //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
@@ -275,9 +274,9 @@ app.post('/api/installed-update',  authenticateShopifyWebhook, async (req, res) 
 
   res.status(200).send("Store marked as installed");
 });
-app.post('/api/uninstalled-update',  authenticateShopifyWebhook, async (req, res) => {
-  const data = JSON.parse(req.body.toString('utf8')); 
-  const { shop, app:appName } = data;
+app.post('/api/uninstalled-update', authenticateShopifyWebhook, async (req, res) => {
+  const data = JSON.parse(req.body.toString('utf8'));
+  const { shop, app: appName } = data;
 
   console.log(`Uninstall webhook for ${shop} - App: ${appName}`);
   //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
@@ -340,8 +339,8 @@ mongoose.connect(process.env.MONGO_URI, {
 
 module.exports = mongoose;
 const options = {
-  key: fs.readFileSync('/etc/letsencrypt/live/apps.plestarinc.com/privkey.pem'),
-  cert: fs.readFileSync('/etc/letsencrypt/live/apps.plestarinc.com/fullchain.pem'),
+  key: fs.readFileSync(process.env.SSL_KEY_PATH),
+  cert: fs.readFileSync(process.env.SSL_CERT_PATH),
 };
 https.createServer(options, app).listen(PORT, () => {
   console.log('Server running on port 7000');
