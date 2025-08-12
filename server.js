@@ -46,6 +46,7 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
 }
 
 app.post('/api/notify', async (req, res) => {
+  console.log(req.body);
   const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain, app } = req.body;
 
   if (!email || !productId || !variantId || !storeDomain || !app) {
