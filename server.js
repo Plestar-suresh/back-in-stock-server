@@ -274,7 +274,8 @@ app.post('/api/installed-update', bodyParser.raw({ type: "application/json" }), 
   res.status(200).send("Store marked as installed");
 });
 app.post('/api/uninstalled-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
-  const { shop } = req.body;
+  const data = JSON.parse(req.body.toString('utf8')); 
+  const { shop } = data;
 
   console.log("Uninstall webhook for "+shop);
   //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
