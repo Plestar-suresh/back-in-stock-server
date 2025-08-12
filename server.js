@@ -167,7 +167,7 @@ app.post('/api/stock-update', async (req, res) => {
   //fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
   res.json({ ok: true, notified: notifiedCount });
 });
-app.post('/api/storefrontAPI', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
+app.post('/api/storefrontAPI',  authenticateShopifyWebhook, async (req, res) => {
   const { shop, app: appName } = JSON.parse(req.body.toString("utf8"));
   if (!shop || !appName) {
       return res.status(400).json({ error: 'Missing shop or app in request body' });
@@ -237,7 +237,7 @@ app.post('/api/storefrontAPI', bodyParser.raw({ type: "application/json" }), aut
   }
 });
 
-app.post('/api/installed-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
+app.post('/api/installed-update',  authenticateShopifyWebhook, async (req, res) => {
   const data = JSON.parse(req.body.toString('utf8')); 
     const { shop, accessToken, app:appName } = data;
 
@@ -275,7 +275,7 @@ app.post('/api/installed-update', bodyParser.raw({ type: "application/json" }), 
 
   res.status(200).send("Store marked as installed");
 });
-app.post('/api/uninstalled-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
+app.post('/api/uninstalled-update',  authenticateShopifyWebhook, async (req, res) => {
   const data = JSON.parse(req.body.toString('utf8')); 
   const { shop, app:appName } = data;
 
