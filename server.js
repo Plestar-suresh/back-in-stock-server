@@ -46,13 +46,13 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
 }
 
 app.post('/api/notify', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
-  const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain } = req.body;
+  const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain, app } = JSON.parse(req.body.toString("utf8"));
 
-  if (!email || !productId || !variantId || !storeDomain) {
+  if (!email || !productId || !variantId || !storeDomain || !app) {
     console.log("❌ Missing required fields:", { email, productId, variantId, storeDomain });
     return res.status(400).json({ ok: false, message: 'Missing required fields' });
   }
-  const accessToken = await getCachedStoreToken(storeDomain);
+  const accessToken = await getCachedStoreToken(storeDomain, app);
   if (!accessToken) {
     return res.status(400).json({ ok: false, message: 'Store access token not found' });
   }
@@ -91,7 +91,7 @@ app.post('/api/notify', bodyParser.raw({ type: "application/json" }), authentica
 
 
 // Optional: simulate stock update and send emails
-app.post('/api/stock-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
+app.post('/api/stock-update', async (req, res) => {
   const update = req.body;
   //console.log("Webhook Called, data:", update);
 
@@ -169,13 +169,16 @@ app.post('/api/stock-update', bodyParser.raw({ type: "application/json" }), auth
   res.json({ ok: true, notified: notifiedCount });
 });
 app.post('/api/storefrontAPI', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
-  const { shop } = req.body;
+  const { shop, app } = JSON.parse(req.body.toString("utf8"));
+  if (!shop || !app) {
+      return res.status(400).json({ error: 'Missing shop or app in request body' });
+    }
   try {
-    const accessToken = await getCachedStoreToken(shop);
+    const accessToken = await getCachedStoreToken(shop, app);
     if (!accessToken) {
       return res.status(400).json({ error: 'Access token not found for this shop' });
     }
-    let storefrontToken = await getCachedStorefrontToken(shop);
+    let storefrontToken = await getCachedStorefrontToken(shop, app);
     if (!storefrontToken) {
 
       const url = `https://${shop}/admin/api/2025-07/graphql.json`;
@@ -227,7 +230,7 @@ app.post('/api/storefrontAPI', bodyParser.raw({ type: "application/json" }), aut
     if (!storefrontToken) {
       return res.status(500).json({ error: 'Failed to create storefront access token' });
     }
-    await updateStoreFrontTokenCache(shop, storefrontToken);
+    await updateStoreFrontTokenCache(shop, storefrontToken, app);
     res.json(storefrontToken);
   } catch (error) {
     console.error("Error:", error.response?.data || error.message);
@@ -237,7 +240,7 @@ app.post('/api/storefrontAPI', bodyParser.raw({ type: "application/json" }), aut
 
 app.post('/api/installed-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
   const data = JSON.parse(req.body.toString('utf8')); 
-    const { shop, accessToken } = data;
+    const { shop, accessToken, app } = data;
 
   //let stores = loadStores();
   //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
@@ -261,23 +264,23 @@ app.post('/api/installed-update', bodyParser.raw({ type: "application/json" }), 
 
   saveStores(stores);*/
   const updated = await Store.findOneAndUpdate(
-    { shop },
+    { shop, app },
     {
-      $set: { accessToken, updatedAt: timestamp, uninstall: false },
+      $set: { accessToken, updatedAt: timestamp, uninstall: false, app },
       $setOnInsert: { createdAt: timestamp }
     },
     { upsert: true, new: true }
   );
 
-  updateStoreTokenCache(shop, accessToken);
+  updateStoreTokenCache(shop, accessToken, app);
 
   res.status(200).send("Store marked as installed");
 });
 app.post('/api/uninstalled-update', bodyParser.raw({ type: "application/json" }), authenticateShopifyWebhook, async (req, res) => {
   const data = JSON.parse(req.body.toString('utf8')); 
-  const { shop } = data;
+  const { shop, app } = data;
 
-  console.log("Uninstall webhook for "+shop);
+  console.log(`Uninstall webhook for ${shop} - App: ${app}`);
   //const existingStoreIndex = stores.findIndex((s) => s.shop === shop);
   const timestamp = new Date().toISOString();
 
@@ -299,14 +302,14 @@ app.post('/api/uninstalled-update', bodyParser.raw({ type: "application/json" })
 
   saveStores(stores);*/
   const updated = await Store.findOneAndUpdate(
-    { shop },
+    { shop, app },
     { updatedAt: timestamp, uninstall: true, accessToken: "" },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  updateStoreTokenCache(shop, null);
+  updateStoreTokenCache(shop, null, app);
 
-  res.status(200).send("Store marked as uninstalled");
+  res.status(200).send(`Store marked as uninstalled for app: ${app}`);
 });
 
 app.post('/webhook', (req, res) => {
