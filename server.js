@@ -170,7 +170,7 @@ app.post('/api/stock-update', async (req, res) => {
   res.json({ ok: true, notified: notifiedCount });
 });
 
-webhookRouter.post('/api/storefrontAPI', async (req, res) => {
+/*webhookRouter.post('/api/storefrontAPI', async (req, res) => {
   let data;
   if (Buffer.isBuffer(req.body)) {
     data = JSON.parse(req.body.toString('utf8'));
@@ -246,7 +246,7 @@ webhookRouter.post('/api/storefrontAPI', async (req, res) => {
     console.error("Error:", error.response?.data || error.message);
     res.status(500).json({ error: error.message });
   }
-});
+});*/
 
 webhookRouter.post('/api/installed-update', async (req, res) => {
   let data;
@@ -334,6 +334,13 @@ webhookRouter.post('/api/uninstalled-update', async (req, res) => {
   updateStoreTokenCache(shop, null, appName);
 
   res.status(200).send(`Store marked as uninstalled for app: ${appName}`);
+});
+app.post("/api/storefrontAPI", (req, res) => {
+  console.log("Data from theme extension:", req.body);
+  res.json({ status: "ok", received: req.body });
+});
+app.get("/api/storefrontAPI", (req, res) => {
+  res.json({ message: "GET request works" });
 });
 
 app.post('/webhook', (req, res) => {
