@@ -9,7 +9,7 @@ const authenticateShopifyWebhook = (req, res, next) => {
   if (!hmacHeader) {
     return res
       .status(401)
-      .json({ response: "error", message: "Access denied. No token provided." });
+      .json({ response: "error", message: "Access denied. No token provided. for shopify" });
   }
 
   try {
