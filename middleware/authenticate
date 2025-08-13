@@ -59,7 +59,6 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .digest("hex");
       //console.log("digest:", digest+ " signature:"+ signature)
       if (digest === signature) {
-        console.log("digest:", digest+ " signature:"+ signature)
         return next(); // ✅ App proxy authenticated
       }
 
