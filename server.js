@@ -371,6 +371,10 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error('❌ MongoDB connection error:', err);
 });
 
+app.get("/", (req, res) => {
+  res.json({ message: "GET request works" });
+});
+
 module.exports = mongoose;
 const options = {
   key: fs.readFileSync(process.env.SSL_KEY_PATH),
