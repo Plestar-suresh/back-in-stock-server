@@ -241,7 +241,7 @@ webhookRouter.post('/api/storefrontAPI', async (req, res) => {
       return res.status(500).json({ error: 'Failed to create storefront access token' });
     }
     await updateStoreFrontTokenCache(shop, storefrontToken, appName);
-    res.json(storefrontToken);
+    res.json({storefrontToken});
   } catch (error) {
     console.error("Error:", error.response?.data || error.message);
     res.status(500).json({ error: error.message });
