@@ -46,7 +46,7 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
   };
 }
 
-app.post('/api/notify', async (req, res) => {
+webhookRouter.post('/api/notify', async (req, res) => {
   const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain, app: appName } = req.body;
 
   if (!email || !productId || !variantId || !storeDomain || !appName) {
