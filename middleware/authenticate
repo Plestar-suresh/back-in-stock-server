@@ -57,7 +57,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
       const sorted = Object.keys(params)
         .sort()
         .map((k) => `${k}=${params[k]}`)
-        .join("");
+        .join("&");
 
       const digest = crypto
         .createHmac("sha256", apiSecret)
