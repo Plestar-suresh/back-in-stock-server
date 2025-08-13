@@ -76,5 +76,3 @@ const authenticateShopifyWebhook = (req, res, next) => {
     .status(401)
     .json({ response: "error", message: "Access denied. No valid authentication provided." });
 };
-
-module.exports = authenticateShopifyWebhook;
