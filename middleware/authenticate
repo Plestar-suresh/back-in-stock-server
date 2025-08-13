@@ -50,6 +50,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
   }
 
   if (req.query && req.query.signature) {
+    console.log("Req Query:",req.query);
     try {
       const { signature, ...params } = req.query;
       const sorted = Object.keys(params)
