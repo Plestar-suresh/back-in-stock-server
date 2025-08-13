@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const authenticateShopifyWebhook = (req, res, next) => {
+export const authenticateShopifyWebhook = (req, res, next) => {
   const apiSecret = process.env.API_SECRET;
   if (!apiSecret) {
     return res
