@@ -49,15 +49,21 @@ const authenticateShopifyWebhook = async (req, res, next) => {
     }
   }
 
-  if (req.query && req.query.signature) {
-    console.log("Req Query:",req.query);
+  if (req.originalUrl && req.query.signature) {
+    
+    const parsedUrl = url.parse(req.originalUrl);
+    
+    const query = querystring.parse(parsedUrl.query, null, null, {
+        decodeURIComponent: s => s
+    });
+    console.log("Req Query:",query);
     try {
-      const { signature, ...params } = req.query;
-      console.log(params);
-      const sorted = Object.keys(params)
+      const { signature, ...rest } = query;
+      console.log(rest);
+      const sorted = Object.keys(rest)
         .sort()
-        .map((k) => `${k}=${params[k]}`)
-        .join("&");
+        .map((k) => `${k}=${rest[k]}`)
+        .join("");
 
       const digest = crypto
         .createHmac("sha256", apiSecret)
