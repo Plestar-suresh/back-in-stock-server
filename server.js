@@ -170,7 +170,7 @@ app.post('/api/stock-update', async (req, res) => {
   res.json({ ok: true, notified: notifiedCount });
 });
 
-webhookRouter.post('/api/search-products', authenticateAppProxyRequest, async (req, res) => {
+webhookRouter.post('/api/search-products', async (req, res) => {
     const { shop, userPrompt, app: appName } = req.body;
 
     if (!shop || !appName) {
