@@ -5,6 +5,7 @@ dotenv.config();
 
 const authenticateShopifyWebhook = async (req, res, next) => {
   let apiSecret = "";
+  console.log(req?.body?.app);
   if (req?.body?.app == "Back In Stock") {
     apiSecret = process.env.API_SECRET1;
   } else {
@@ -60,7 +61,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .createHmac("sha256", apiSecret)
         .update(sorted)
         .digest("hex");
-      //console.log("digest:", digest+ " signature:"+ signature)
+      console.log("digest:", digest+ " signature:"+ signature)
       if (digest === signature) {
         return next(); // ✅ App proxy authenticated
       }
