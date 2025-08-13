@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const authenticateShopifyWebhook = (req, res, next) => {
+  console.log(req);
   const hmacHeader = req.get("X-Shopify-Hmac-Sha256");
 
   if (!hmacHeader) {
