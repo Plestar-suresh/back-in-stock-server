@@ -335,13 +335,6 @@ webhookRouter.post('/api/uninstalled-update', async (req, res) => {
 
   res.status(200).send(`Store marked as uninstalled for app: ${appName}`);
 });
-app.post("/api/storefrontAPI", (req, res) => {
-  console.log("Data from theme extension:", req.body);
-  res.json({ status: "ok", received: req.body });
-});
-app.get("/api/storefrontAPI", (req, res) => {
-  res.json({ message: "GET request works" });
-});
 
 app.post('/webhook', (req, res) => {
   console.log('Received GitHub webhook push event for front-end');
