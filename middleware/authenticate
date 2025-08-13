@@ -4,8 +4,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const authenticateShopifyWebhook = async (req, res, next) => {
-
-  const apiSecret = process.env.API_SECRET;
+  let apiSecret = "";
+  if (req.body.app == "Back In Stock") {
+    apiSecret = process.env.API_SECRET1;
+  } else {
+    apiSecret = process.env.API_SECRET;
+  }
   if (!apiSecret) {
     return res
       .status(500)
@@ -31,7 +35,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .digest("base64");
 
       if (generatedHmac === hmacHeader) {
-        return next(); // ✅ Webhook authenticated
+        return next();
       }
 
       return res
@@ -44,7 +48,6 @@ const authenticateShopifyWebhook = async (req, res, next) => {
     }
   }
 
-  // 2️⃣ Check for App Proxy signature authentication
   if (req.query && req.query.signature) {
     try {
       const { signature, ...params } = req.query;
