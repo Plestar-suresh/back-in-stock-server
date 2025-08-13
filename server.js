@@ -170,83 +170,127 @@ app.post('/api/stock-update', async (req, res) => {
   res.json({ ok: true, notified: notifiedCount });
 });
 
-webhookRouter.post('/api/storefrontAPI', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
-  const { shop, app: appName } = data;
-  if (!shop || !appName) {
-    return res.status(400).json({ error: 'Missing shop or app in request body' });
-  }
-  try {
-    const accessToken = await getCachedStoreToken(shop, appName);
-    if (!accessToken) {
-      return res.status(400).json({ error: 'Access token not found for this shop' });
+webhookRouter.post('/api/search-products', authenticateAppProxyRequest, async (req, res) => {
+    const { shop, userPrompt, app: appName } = req.body;
+
+    if (!shop || !appName) {
+        return res.status(400).json({ error: 'Missing shop or app in request body' });
     }
+    if (!userPrompt) {
+        return res.status(400).json({ error: 'Missing userPrompt in request body' });
+    }
+
+    try {
+        const storefrontToken = await getStorefrontToken(shop, appName);
+        if (!storefrontToken) {
+            return res.status(401).json({ error: 'Unable to get storefront token' });
+        }
+
+        const graphqlQuery = await generateGraphQLQuery(userPrompt);
+        const shopifyData = await runGraphQLOnShopify(shop, graphqlQuery, storefrontToken);
+
+        res.json(shopifyData);
+    } catch (err) {
+        console.error("Full process error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+async function generateGraphQLQuery(userPrompt) {
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+        throw new Error("OPENAI_API_KEY is not set in .env");
+    }
+
+    try {
+        const openAiRes = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-4',
+            messages: [
+                {
+                    role: 'system',
+                    content: "You're an assistant that converts user product requests into Shopify Storefront GraphQL queries. Return ONLY the complete GraphQL query with 'query { ... }'. Do NOT use triple backticks or code blocks. Use: products(first: 10, query: \"<user prompt>\"). Inside node, return: title, handle, availableForSale, featuredImage { url }, and priceRange { minVariantPrice { amount, currencyCode } }. Do NOT use product, productByHandle, or any arguments that don't exist. Keep it simple filter manually in code based on user prompt.",
+                },
+                {
+                    role: 'user',
+                    content: userPrompt,
+                },
+            ],
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            },
+        });
+
+        const gqlQuery = openAiRes.data.choices[0].message.content.trim();
+        return gqlQuery;
+    } catch (error) {
+        console.error("Error from OpenAI API:", error.response?.data || error.message);
+        throw new Error("Failed to generate GraphQL query with AI.");
+    }
+}
+
+async function runGraphQLOnShopify(shop, gqlQuery, storefrontToken) {
+    if (!shop) throw new Error("Missing shop parameter");
+
+    const shopifyRes = await axios.post(
+        `https://${shop}/api/${SHOPIFY_API_VERSION}/graphql.json`,
+        { query: gqlQuery },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Shopify-Storefront-Access-Token': storefrontToken,
+            },
+        }
+    );
+
+    return shopifyRes.data;
+}
+
+async function getStorefrontToken(shop, appName) {
+    if (!shop || !appName) throw new Error('Missing shop or app');
+
+    const accessToken = await getCachedStoreToken(shop, appName);
+    if (!accessToken) throw new Error('Access token not found for this shop');
+
     let storefrontToken = await getCachedStorefrontToken(shop, appName);
     if (!storefrontToken) {
-
-      const url = `https://${shop}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`;
-
-      const query = `
-      mutation StorefrontAccessTokenCreate($input: StorefrontAccessTokenInput!) {
-        storefrontAccessTokenCreate(input: $input) {
-          userErrors {
-            field
-            message
-          }
-          shop {
-            id
-          }
-          storefrontAccessToken {
-            accessScopes {
-              handle
+        const url = `https://${shop}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`;
+        const query = `
+            mutation StorefrontAccessTokenCreate($input: StorefrontAccessTokenInput!) {
+                storefrontAccessTokenCreate(input: $input) {
+                    userErrors { field message }
+                    shop { id }
+                    storefrontAccessToken {
+                        accessScopes { handle }
+                        accessToken
+                        title
+                    }
+                }
             }
-            accessToken
-            title
-          }
+        `;
+        const variables = { input: { title: "New Storefront Access Token" } };
+
+        const response = await axios.post(url, { query, variables }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Shopify-Access-Token': accessToken.trim()
+            }
+        });
+
+        const result = response.data.data?.storefrontAccessTokenCreate;
+        if (result?.userErrors?.length) {
+            throw new Error(`Storefront token creation failed: ${JSON.stringify(result.userErrors)}`);
         }
-      }
-    `;
 
-      const variables = {
-        input: {
-          title: "New Storefront Access Token"
-        }
-      };
-
-      const response = await axios.post(url, {
-        query,
-        variables
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': accessToken.trim()
-        }
-      });
-      const data = response.data.data?.storefrontAccessTokenCreate;
-
-      if (data.userErrors.length > 0) {
-        return res.status(400).json({ errors: data.userErrors });
-      }
-
-      storefrontToken = data.storefrontAccessToken?.accessToken;
+        storefrontToken = result?.storefrontAccessToken?.accessToken;
     }
-    if (!storefrontToken) {
-      return res.status(500).json({ error: 'Failed to create storefront access token' });
-    }
+
+    if (!storefrontToken) throw new Error('Failed to create or retrieve storefront access token');
+
     await updateStoreFrontTokenCache(shop, storefrontToken, appName);
-    res.json({storefrontToken});
-  } catch (error) {
-    console.error("Error:", error.response?.data || error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
+    return storefrontToken;
+}
 
 webhookRouter.post('/api/installed-update', async (req, res) => {
   let data;
