@@ -179,6 +179,7 @@ webhookRouter.post('/api/storefrontAPI', async (req, res) => {
   } else {
     data = req.body; // already parsed object
   }
+  console.log(data);
   const { shop, app: appName } = data;
   if (!shop || !appName) {
     return res.status(400).json({ error: 'Missing shop or app in request body' });
