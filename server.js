@@ -170,7 +170,7 @@ app.post('/api/stock-update', async (req, res) => {
   res.json({ ok: true, notified: notifiedCount });
 });
 
-/*webhookRouter.post('/api/storefrontAPI', async (req, res) => {
+webhookRouter.post('/api/storefrontAPI', async (req, res) => {
   let data;
   if (Buffer.isBuffer(req.body)) {
     data = JSON.parse(req.body.toString('utf8'));
@@ -246,7 +246,7 @@ app.post('/api/stock-update', async (req, res) => {
     console.error("Error:", error.response?.data || error.message);
     res.status(500).json({ error: error.message });
   }
-});*/
+});
 
 webhookRouter.post('/api/installed-update', async (req, res) => {
   let data;
