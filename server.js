@@ -361,6 +361,9 @@ app.post('/webhook', (req, res) => {
     res.status(200).send('Deployment triggered');
   });
 });
+app.get("/", (req, res) => {
+  res.json({ message: "GET request works" });
+});
 app.use(webhookRouter)
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -371,9 +374,7 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error('❌ MongoDB connection error:', err);
 });
 
-app.get("/", (req, res) => {
-  res.json({ message: "GET request works" });
-});
+
 
 module.exports = mongoose;
 const options = {
