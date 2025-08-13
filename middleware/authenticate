@@ -50,7 +50,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
   }
 
   if (req.query && req.query.signature) {
-    console.log("Req Query:",req.query);
+    console.log("Req Query:", req.query);
     try {
       const { signature, ...params } = req.query;
       console.log(params);
@@ -58,12 +58,12 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .sort()
         .map((k) => `${k}=${params[k]}`)
         .join("");
-
+      console.log(apiSecret);
       const digest = crypto
         .createHmac("sha256", apiSecret)
         .update(sorted)
         .digest("hex");
-      console.log("digest:", digest+ " signature:"+ signature)
+      console.log("digest:", digest + " signature:" + signature)
       if (digest === signature) {
         return next(); // ✅ App proxy authenticated
       }
