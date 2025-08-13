@@ -3,7 +3,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const authenticateShopifyWebhook = (req, res, next) => {
+const authenticateShopifyWebhook = async (req, res, next) => {
+
   const apiSecret = process.env.API_SECRET;
   if (!apiSecret) {
     return res
@@ -18,11 +19,11 @@ export const authenticateShopifyWebhook = (req, res, next) => {
       const bodyBuffer = Buffer.isBuffer(req.body)
         ? req.body
         : Buffer.from(
-            typeof req.body === "string"
-              ? req.body
-              : JSON.stringify(req.body),
-            "utf8"
-          );
+          typeof req.body === "string"
+            ? req.body
+            : JSON.stringify(req.body),
+          "utf8"
+        );
 
       const generatedHmac = crypto
         .createHmac("sha256", apiSecret)
@@ -76,3 +77,5 @@ export const authenticateShopifyWebhook = (req, res, next) => {
     .status(401)
     .json({ response: "error", message: "Access denied. No valid authentication provided." });
 };
+
+export default authenticateShopifyWebhook;
