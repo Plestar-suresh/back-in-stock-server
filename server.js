@@ -21,7 +21,7 @@ const { default: authenticateShopifyWebhook } = require('./middleware/authentica
 const { default: puppeteer } = require('puppeteer');
 
 const webhookRouter = express.Router();
-webhookRouter.use(express.raw({ type: '*/*' }));
+webhookRouter.use(express.raw({ type: 'application/json' }));
 webhookRouter.use(authenticateShopifyWebhook);
 
 const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2025-07';
