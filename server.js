@@ -18,6 +18,7 @@ const Store = require('./models/Store');
 const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
 const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
+const { default: puppeteer } = require('puppeteer');
 
 const webhookRouter = express.Router();
 webhookRouter.use(bodyParser.raw({ type: 'application/json' }));
@@ -411,7 +412,15 @@ app.post('/webhook', (req, res) => {
     res.status(200).send('Deployment triggered');
   });
 });
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  await page.setUserAgent("AI-Agent-Test");
+  await page.goto("https://apps.plestarinc.com/", { waitUntil: "networkidle2" });
+
+  console.log("Page loaded, JavaScript executed.");
+  await browser.close();
   res.json({ message: "GET request works" });
 });
 app.use(webhookRouter)
