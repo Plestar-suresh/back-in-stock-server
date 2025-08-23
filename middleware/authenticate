@@ -7,7 +7,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
   let apiSecret = "";
   console.log(req.body);
   let data=req.body;
-  //data=JSON.parse(data.toString('utf8'));
+  data=JSON.parse(data.toString('utf8'));
   if (data?.app == "Back In Stock" || (req.originalUrl && req.originalUrl == "/api/stock-update")) {
     apiSecret = process.env.API_SECRET1;
     console.log(apiSecret);
