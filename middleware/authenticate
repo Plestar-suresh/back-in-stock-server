@@ -61,7 +61,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
       console.log("apiSecret:",apiSecret);
       const digest = crypto
         .createHmac("sha256", apiSecret)
-        .update(sorted+apiSecret)
+        .update(sorted)
         .digest("hex");
       console.log("digest:", digest + " signature:" + signature)
       if (digest === signature) {
