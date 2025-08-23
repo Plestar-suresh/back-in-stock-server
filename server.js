@@ -302,7 +302,7 @@ app.post('/api/fingerprint', async (req, res) => {
     data = req.body; // already parsed object
   }
   const { shop, fingerprint, visitorId } = data;
-  console.log("Shop:" + shop + " Agent:" + fingerprint+ " visitorId:":+visitorId);
+  console.log("Shop:" + shop + " Agent:" + fingerprint+ " visitorId:"+visitorId);
   
 });
 
