@@ -34,8 +34,9 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .createHmac("sha256", apiSecret)
         .update(bodyBuffer)
         .digest("base64");
-      console.log("generatedHmac:"+generatedHmac+" hmacHeader:"+hmacHeader)
-      if (generatedHmac === hmacHeader) {
+     const hmacBuffer = Buffer.from(hmacHeader, 'base64');   
+      console.log("generatedHmac:"+generatedHmac+" hmacHeader:"+hmacBuffer)
+      if (crypto.timingSafeEqual(Buffer.from(generatedHmac, 'base64'), hmacBuffer)) {
         return next();
       }
 
@@ -61,7 +62,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
       console.log("apiSecret:",apiSecret);
       const digest = crypto
         .createHmac("sha256", apiSecret)
-        .update(sorted)
+        .update(sorted+apiSecret)
         .digest("hex");
       console.log("digest:", digest + " signature:" + signature)
       if (digest === signature) {
