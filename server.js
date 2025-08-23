@@ -93,7 +93,7 @@ webhookRouter.post('/api/notify', async (req, res) => {
 
 
 // Optional: simulate stock update and send emails
-app.post('/api/stock-update', async (req, res) => {
+webhookRouter.post('/api/stock-update', async (req, res) => {
   const update = req.body;
   //console.log("Webhook Called, data:", update);
 
@@ -413,7 +413,7 @@ app.post('/webhook', (req, res) => {
   });
 });
 app.get("/", async (req, res) => {
-  const browser = await puppeteer.launch({headless: "new",  // run in headless mode
+  /*const browser = await puppeteer.launch({headless: "new",  // run in headless mode
     args: ["--no-sandbox", "--disable-setuid-sandbox"]
   });
   const page = await browser.newPage();
@@ -422,7 +422,7 @@ app.get("/", async (req, res) => {
   await page.goto("https://text-myshopitfy-com.myshopify.com/", { waitUntil: "networkidle2" });
 
   console.log("Page loaded, JavaScript executed.");
-  await browser.close();
+  await browser.close();*/
   res.json({ message: "GET request works" });
 });
 app.use(webhookRouter)
