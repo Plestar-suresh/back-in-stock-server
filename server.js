@@ -413,7 +413,9 @@ app.post('/webhook', (req, res) => {
   });
 });
 app.get("/", async (req, res) => {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({headless: "new",  // run in headless mode
+    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+  });
   const page = await browser.newPage();
 
   await page.setUserAgent("AI-Agent-Test");
