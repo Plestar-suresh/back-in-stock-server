@@ -21,7 +21,7 @@ const { default: authenticateShopifyWebhook } = require('./middleware/authentica
 const { default: puppeteer } = require('puppeteer');
 
 const webhookRouter = express.Router();
-webhookRouter.use(express.raw({ type: 'application/json' }));
+app.use(express.json());
 webhookRouter.use(authenticateShopifyWebhook);
 
 const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2025-07';
@@ -48,14 +48,8 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
 }
 
 webhookRouter.post('/api/notify', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data = req.body;
+
   const { name, email, productId, variantId, productTitle, productImage, productHandle, storeDomain, app: appName } = data;
 
   if (!email || !productId || !variantId || !storeDomain || !appName) {
@@ -102,14 +96,8 @@ webhookRouter.post('/api/notify', async (req, res) => {
 
 // Optional: simulate stock update and send emails
 webhookRouter.post('/api/stock-update', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data = req.body; // already parsed object
+
   const update = data;
   //console.log("Webhook Called, data:", update);
 
@@ -188,14 +176,8 @@ webhookRouter.post('/api/stock-update', async (req, res) => {
 });
 
 webhookRouter.post('/api/search-products', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data = req.body; // already parsed object
+
   const { shop, userPrompt, app: appName } = data;
 
   if (!shop || !appName) {
@@ -318,14 +300,8 @@ async function getStorefrontToken(shop, appName) {
 }
 
 webhookRouter.post('/api/installed-update', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data = req.body; // already parsed object
+  
   const { shop, accessToken, app: appName } = data;
   console.log(`Install webhook for ${shop} - App: ${appName}`);
   //let stores = loadStores();
@@ -363,14 +339,7 @@ webhookRouter.post('/api/installed-update', async (req, res) => {
   res.status(200).send("Store marked as installed");
 });
 webhookRouter.post('/api/uninstalled-update', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data = req.body; // already parsed object
 
   const { shop, app: appName } = data;
 
@@ -439,17 +408,11 @@ app.get("/", async (req, res) => {
 });
 app.use(webhookRouter);
 
-app.use(express.json());
+
 
 app.post('/api/fingerprint', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data = req.body; // already parsed object
+
   const { shop, fingerprint, visitorId } = data;
   console.log("Shop:" + shop + " Agent:" + fingerprint + " visitorId:" + visitorId);
 
