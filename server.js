@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 7000;
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+
 
 const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, getCachedStorefrontToken } = require('./cache');
 const Store = require('./models/Store');
@@ -425,7 +425,8 @@ app.get("/", async (req, res) => {
   await browser.close();*/
   res.json({ message: "GET request works" });
 });
-app.use(webhookRouter)
+app.use(webhookRouter);
+app.use(express.json());
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
