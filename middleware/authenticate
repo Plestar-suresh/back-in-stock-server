@@ -43,9 +43,11 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .status(401)
         .json({ response: "error", message: "Access denied. Invalid webhook token." });
     } catch (err) {
+      console.log("Error validating webhook request.",err)
       return res
         .status(400)
         .json({ response: "error", message: "Error validating webhook request.", error: err });
+        
     }
   }
 
