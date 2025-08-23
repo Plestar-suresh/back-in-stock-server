@@ -292,22 +292,10 @@ async function getStorefrontToken(shop, appName) {
     await updateStoreFrontTokenCache(shop, storefrontToken, appName);
     return storefrontToken;
 }
-app.post('/api/fingerprint', async (req, res) => {
-  let data = req.body;
-  const { shop, fingerprint, visitorId } = data;
-  console.log("Shop:" + shop + " Agent:" + fingerprint+ " visitorId:"+visitorId);
-  
-});
 
 webhookRouter.post('/api/installed-update', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data = req.body; 
+
   const { shop, accessToken, app: appName } = data;
   console.log(`Install webhook for ${shop} - App: ${appName}`);
   //let stores = loadStores();
@@ -345,14 +333,8 @@ webhookRouter.post('/api/installed-update', async (req, res) => {
   res.status(200).send("Store marked as installed");
 });
 webhookRouter.post('/api/uninstalled-update', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data = req.body;
+
   const { shop, app: appName } = data;
 
   console.log(`Uninstall webhook for ${shop} - App: ${appName}`);
@@ -419,7 +401,15 @@ app.get("/", async (req, res) => {
   res.json({ message: "GET request works" });
 });
 app.use(webhookRouter);
+
 app.use(express.json());
+
+app.post('/api/fingerprint', async (req, res) => {
+  let data = req.body;
+  const { shop, fingerprint, visitorId } = data;
+  console.log("Shop:" + shop + " Agent:" + fingerprint+ " visitorId:"+visitorId);
+  
+});
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
