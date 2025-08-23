@@ -5,14 +5,8 @@ dotenv.config();
 
 const authenticateShopifyWebhook = async (req, res, next) => {
   let apiSecret = "";
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data=req.body; // already parsed object
+
   if (data?.app == "Back In Stock" || (req.originalUrl && req.originalUrl == "/api/stock-update")) {
     apiSecret = process.env.API_SECRET1;
     console.log(apiSecret);
