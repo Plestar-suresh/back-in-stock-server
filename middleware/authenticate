@@ -32,7 +32,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
 
       const generatedHmac = crypto
         .createHmac("sha256", apiSecret)
-        .update(req.body)
+        .update(bodyBuffer)
         .digest("base64");
       console.log("generatedHmac:"+generatedHmac+" hmacHeader:"+hmacHeader)
       if (generatedHmac === hmacHeader) {
