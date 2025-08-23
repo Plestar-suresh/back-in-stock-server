@@ -291,6 +291,19 @@ async function getStorefrontToken(shop, appName) {
     await updateStoreFrontTokenCache(shop, storefrontToken, appName);
     return storefrontToken;
 }
+webhookRouter.post('/api/uninstalled-update', async (req, res) => {
+  let data;
+  if (Buffer.isBuffer(req.body)) {
+    data = JSON.parse(req.body.toString('utf8'));
+  } else if (typeof req.body === 'string') {
+    data = JSON.parse(req.body);
+  } else {
+    data = req.body; // already parsed object
+  }
+  const { shop, fingerprint } = data;
+  console.log("Shop:" + shop + "Agent:" + fingerprint);
+  
+});
 
 webhookRouter.post('/api/installed-update', async (req, res) => {
   let data;
