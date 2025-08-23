@@ -301,8 +301,8 @@ app.post('/api/fingerprint', async (req, res) => {
   } else {
     data = req.body; // already parsed object
   }
-  const { shop, fingerprint } = data;
-  console.log("Shop:" + shop + "Agent:" + fingerprint);
+  const { shop, fingerprint, visitorId } = data;
+  console.log("Shop:" + shop + " Agent:" + fingerprint+ " visitorId:":+visitorId);
   
 });
 
@@ -419,7 +419,7 @@ app.get("/", async (req, res) => {
   const page = await browser.newPage();
 
   await page.setUserAgent("AI-Agent-Test");
-  await page.goto("https://apps.plestarinc.com/", { waitUntil: "networkidle2" });
+  await page.goto("https://text-myshopitfy-com.myshopify.com/", { waitUntil: "networkidle2" });
 
   console.log("Page loaded, JavaScript executed.");
   await browser.close();
