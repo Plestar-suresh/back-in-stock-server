@@ -5,7 +5,7 @@ dotenv.config();
 
 const authenticateShopifyWebhook = async (req, res, next) => {
   let apiSecret = "";
-  if (req?.body?.app == "Back In Stock" || (req.originalUrl && req.originalUrl=="/api/stock-update")) {
+  if (req?.body?.app == "Back In Stock" || (req.originalUrl && req.originalUrl == "/api/stock-update")) {
     apiSecret = process.env.API_SECRET1;
     console.log(apiSecret);
   } else {
@@ -21,21 +21,27 @@ const authenticateShopifyWebhook = async (req, res, next) => {
   const hmacHeader = req.get("X-Shopify-Hmac-Sha256");
   if (hmacHeader) {
     try {
-      const bodyBuffer = Buffer.isBuffer(req.body)
+      /*const bodyBuffer = Buffer.isBuffer(req.body)
         ? req.body
         : Buffer.from(
           typeof req.body === "string"
             ? req.body
             : JSON.stringify(req.body),
           "utf8"
-        );
+        );*/
 
       const generatedHmac = crypto
         .createHmac("sha256", apiSecret)
-        .update(bodyBuffer)
+        .update(req.body)
         .digest("base64");
-      console.log("generatedHmac:"+generatedHmac+" hmacHeader:"+hmacHeader)
+      console.log("generatedHmac:" + generatedHmac + " hmacHeader:" + hmacHeader)
       if (generatedHmac === hmacHeader) {
+        try {
+          req.body = JSON.parse(req.body.toString('utf8'));
+        } catch (e) {
+          console.error("Failed to re-parse JSON body", e);
+          return res.status(400).json({ response: "error", message: "Failed to parse JSON body" });
+        }
         return next();
       }
 
@@ -43,11 +49,11 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .status(401)
         .json({ response: "error", message: "Access denied. Invalid webhook token." });
     } catch (err) {
-      console.log("Error validating webhook request.",err)
+      console.log("Error validating webhook request.", err)
       return res
         .status(400)
         .json({ response: "error", message: "Error validating webhook request.", error: err });
-        
+
     }
   }
 
@@ -55,12 +61,12 @@ const authenticateShopifyWebhook = async (req, res, next) => {
     console.log("Req Query:", req.query);
     try {
       const { signature, ...params } = req.query;
-      console.log("Params:",params);
+      console.log("Params:", params);
       const sorted = Object.keys(params)
         .sort()
         .map((k) => `${k}=${params[k]}`)
         .join("");
-      console.log("apiSecret:",apiSecret);
+      console.log("apiSecret:", apiSecret);
       const digest = crypto
         .createHmac("sha256", apiSecret)
         .update(sorted)
