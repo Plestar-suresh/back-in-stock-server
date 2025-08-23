@@ -293,14 +293,7 @@ async function getStorefrontToken(shop, appName) {
     return storefrontToken;
 }
 app.post('/api/fingerprint', async (req, res) => {
-  let data;
-  if (Buffer.isBuffer(req.body)) {
-    data = JSON.parse(req.body.toString('utf8'));
-  } else if (typeof req.body === 'string') {
-    data = JSON.parse(req.body);
-  } else {
-    data = req.body; // already parsed object
-  }
+  let data = req.body;
   const { shop, fingerprint, visitorId } = data;
   console.log("Shop:" + shop + " Agent:" + fingerprint+ " visitorId:"+visitorId);
   
