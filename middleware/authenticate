@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const authenticateShopifyWebhook = async (req, res, next) => {
-  console.log(req);
+  console.log(req.body);
   let apiSecret = "";
   if (req?.body?.app == "Back In Stock") {
     apiSecret = process.env.API_SECRET1;
