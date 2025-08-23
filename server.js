@@ -405,6 +405,7 @@ app.use(webhookRouter);
 app.use(express.json());
 
 app.post('/api/fingerprint', async (req, res) => {
+  console.log(req.body);
   let data = req.body;
   const { shop, fingerprint, visitorId } = data;
   console.log("Shop:" + shop + " Agent:" + fingerprint+ " visitorId:"+visitorId);
