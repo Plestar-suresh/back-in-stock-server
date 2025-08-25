@@ -3,12 +3,10 @@ import { Fingerprint } from '../models/Fingerprint.js';
 import { hashComponents } from '../utils/hash.js';
 import express from "express";
 
-const fingerprintRouter = express.Router();
-
-
-
+export function fingerprintRouter({ redis }) {
+  const router = express.Router();
     // READ-THROUGH CACHE: GET /apps/my-app/api/fingerprint/:shop/:visitorId
-    fingerprintRouter.get('/:shop/:visitorId', async (req, res) => {
+    router.get('/:shop/:visitorId', async (req, res) => {
         try {
             const { shop, visitorId } = req.params;
             const cacheKey = `fp:${shop}:${visitorId}`;
@@ -33,7 +31,7 @@ const fingerprintRouter = express.Router();
     });
 
     // WRITE (idempotent): POST /apps/my-app/api/fingerprint
-    fingerprintRouter.post('/', async (req, res) => {
+    router.post('/', async (req, res) => {
         try {
             let data;
             if (Buffer.isBuffer(req.body)) {
@@ -124,5 +122,5 @@ const fingerprintRouter = express.Router();
             return res.status(500).json({ message: 'Server error' });
         }
     });
-
-module.exports = { fingerprintRouter };
+    return router;
+}
