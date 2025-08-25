@@ -1,7 +1,7 @@
 // routes/fingerprint.js
 import { Fingerprint } from '../models/Fingerprint.js';
 import { hashComponents } from '../utils/hash.js';
-const express = require('express');
+import express from "express";
 
 const fingerprintRouter = express.Router();
 
