@@ -445,7 +445,7 @@ webhookRouter.use((req, res, next) => {
   next();
 });
 
-webhookRouter.use('/api/fingerprint', fingerprintRouter);
+//webhookRouter.use('/api/fingerprint', fingerprintRouter);
 
 app.use(webhookRouter);
 
