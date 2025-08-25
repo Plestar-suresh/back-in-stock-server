@@ -2,8 +2,8 @@
 import { Fingerprint } from '../models/Fingerprint.js';
 import { hashComponents } from '../utils/hash.js';
 
-export function fingerprintRouter({ redis }) {
-    const express = import('express');
+export async function fingerprintRouter({ redis }) {
+    const express = (await import('express')).default;
     const router = express.Router();
 
     // READ-THROUGH CACHE: GET /apps/my-app/api/fingerprint/:shop/:visitorId
