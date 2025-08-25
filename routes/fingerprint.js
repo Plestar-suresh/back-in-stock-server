@@ -3,7 +3,7 @@ import { Fingerprint } from '../models/Fingerprint.js';
 import { hashComponents } from '../utils/hash.js';
 
 export function fingerprintRouter({ redis }) {
-    const express = require('express');
+    const express = import('express');
     const router = express.Router();
 
     // READ-THROUGH CACHE: GET /apps/my-app/api/fingerprint/:shop/:visitorId
