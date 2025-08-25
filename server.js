@@ -20,6 +20,7 @@ const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 const { default: puppeteer } = require('puppeteer');
 const { fingerprintRouter } = require('./routes/fingerprint');
+const { getRedis } = require('./db/redis');
 
 const webhookRouter = express.Router();
 webhookRouter.use(express.raw({ type: 'application/json' }));
