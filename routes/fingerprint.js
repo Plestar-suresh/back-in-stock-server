@@ -1,13 +1,14 @@
 // routes/fingerprint.js
 import { Fingerprint } from '../models/Fingerprint.js';
 import { hashComponents } from '../utils/hash.js';
+const express = require('express');
 
-export async function fingerprintRouter({ redis }) {
-    const express = (await import('express')).default;
-    const router = express.Router();
+const fingerprintRouter = express.Router();
+
+
 
     // READ-THROUGH CACHE: GET /apps/my-app/api/fingerprint/:shop/:visitorId
-    router.get('/:shop/:visitorId', async (req, res) => {
+    fingerprintRouter.get('/:shop/:visitorId', async (req, res) => {
         try {
             const { shop, visitorId } = req.params;
             const cacheKey = `fp:${shop}:${visitorId}`;
@@ -32,7 +33,7 @@ export async function fingerprintRouter({ redis }) {
     });
 
     // WRITE (idempotent): POST /apps/my-app/api/fingerprint
-    router.post('/', async (req, res) => {
+    fingerprintRouter.post('/', async (req, res) => {
         try {
             let data;
             if (Buffer.isBuffer(req.body)) {
@@ -124,5 +125,4 @@ export async function fingerprintRouter({ redis }) {
         }
     });
 
-    return router;
-}
+module.exports = { fingerprintRouter };

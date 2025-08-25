@@ -440,7 +440,12 @@ app.get("/", async (req, res) => {
   await browser.close();*/
   res.json({ message: "GET request works" });
 });
-webhookRouter.use('/api/fingerprint', fingerprintRouter({ redis }));
+webhookRouter.use((req, res, next) => {
+  req.redis = redis;
+  next();
+});
+
+webhookRouter.use('/api/fingerprint', fingerprintRouter);
 
 app.use(webhookRouter);
 
