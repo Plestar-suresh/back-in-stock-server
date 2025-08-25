@@ -19,12 +19,14 @@ const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSing
 const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 const { default: puppeteer } = require('puppeteer');
+const { fingerprintRouter } = require('./routes/fingerprint');
 
 const webhookRouter = express.Router();
 webhookRouter.use(express.raw({ type: 'application/json' }));
 webhookRouter.use(authenticateShopifyWebhook);
 
 const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2025-07';
+const redis = getRedis(process.env.REDIS_URL);
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
   const url = `https://${storeDomain}/admin/api/${SHOPIFY_API_VERSION}/variants/${variantId}.json`;
   const response = await fetch(url, {
@@ -49,7 +51,7 @@ async function getInventoryItemId(storeDomain, accessToken, variantId) {
 
 webhookRouter.post('/api/notify', async (req, res) => {
   let data;
-  if (Buffer.isBuffer(req.body)) {
+  if (req.body && Buffer.isBuffer(req.body)) {
     data = JSON.parse(req.body.toString('utf8'));
   } else if (typeof req.body === 'string') {
     data = JSON.parse(req.body);
@@ -103,7 +105,7 @@ webhookRouter.post('/api/notify', async (req, res) => {
 // Optional: simulate stock update and send emails
 webhookRouter.post('/api/stock-update', async (req, res) => {
   let data;
-  if (Buffer.isBuffer(req.body)) {
+  if (req.body && Buffer.isBuffer(req.body)) {
     data = JSON.parse(req.body.toString('utf8'));
   } else if (typeof req.body === 'string') {
     data = JSON.parse(req.body);
@@ -189,7 +191,7 @@ webhookRouter.post('/api/stock-update', async (req, res) => {
 
 webhookRouter.post('/api/search-products', async (req, res) => {
   let data;
-  if (Buffer.isBuffer(req.body)) {
+  if (req.body && Buffer.isBuffer(req.body)) {
     data = JSON.parse(req.body.toString('utf8'));
   } else if (typeof req.body === 'string') {
     data = JSON.parse(req.body);
@@ -319,7 +321,7 @@ async function getStorefrontToken(shop, appName) {
 
 webhookRouter.post('/api/installed-update', async (req, res) => {
   let data;
-  if (Buffer.isBuffer(req.body)) {
+  if (req.body && Buffer.isBuffer(req.body)) {
     data = JSON.parse(req.body.toString('utf8'));
   } else if (typeof req.body === 'string') {
     data = JSON.parse(req.body);
@@ -364,7 +366,7 @@ webhookRouter.post('/api/installed-update', async (req, res) => {
 });
 webhookRouter.post('/api/uninstalled-update', async (req, res) => {
   let data;
-  if (Buffer.isBuffer(req.body)) {
+  if (req.body && Buffer.isBuffer(req.body)) {
     data = JSON.parse(req.body.toString('utf8'));
   } else if (typeof req.body === 'string') {
     data = JSON.parse(req.body);
@@ -437,13 +439,14 @@ app.get("/", async (req, res) => {
   await browser.close();*/
   res.json({ message: "GET request works" });
 });
+webhookRouter.use('/api/fingerprint', fingerprintRouter({ redis }));
+
 app.use(webhookRouter);
 
 app.use(express.json());
-
-app.post('/api/fingerprint', async (req, res) => {
+/*app.post('/api/fingerprint', async (req, res) => {
   let data;
-  if (Buffer.isBuffer(req.body)) {
+  if (req.body && Buffer.isBuffer(req.body)) {
     data = JSON.parse(req.body.toString('utf8'));
   } else if (typeof req.body === 'string') {
     data = JSON.parse(req.body);
@@ -453,7 +456,8 @@ app.post('/api/fingerprint', async (req, res) => {
   const { shop, fingerprint, visitorId } = data;
   console.log("Shop:" + shop + " Agent:" + fingerprint + " visitorId:" + visitorId);
 
-});
+});*/
+
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
