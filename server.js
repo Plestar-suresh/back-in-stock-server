@@ -20,14 +20,13 @@ const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 const { default: puppeteer } = require('puppeteer');
 const { fingerprintRouter } = require('./routes/fingerprint');
-const { getRedis } = require('./db/redis');
 
 const webhookRouter = express.Router();
 webhookRouter.use(express.raw({ type: 'application/json' }));
 webhookRouter.use(authenticateShopifyWebhook);
 
 const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2025-07';
-const redis = getRedis(process.env.REDIS_URL);
+
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
   const url = `https://${storeDomain}/admin/api/${SHOPIFY_API_VERSION}/variants/${variantId}.json`;
   const response = await fetch(url, {
@@ -442,7 +441,7 @@ app.get("/", async (req, res) => {
 });
 
 
-webhookRouter.use("/api/fingerprint", fingerprintRouter({ redis }));
+webhookRouter.use("/api/fingerprint", fingerprintRouter);
 app.use(webhookRouter);
 
 app.use(express.json());

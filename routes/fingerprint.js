@@ -1,9 +1,11 @@
 // routes/fingerprint.js
+import { getRedis } from '../db/redis.js';
 import { Fingerprint } from '../models/Fingerprint.js';
 import { hashComponents } from '../utils/hash.js';
 import express from "express";
 
-export function fingerprintRouter({ redis }) {
+export async function fingerprintRouter({ redis }) {
+    const redis = await getRedis(process.env.REDIS_URL);
   const router = express.Router();
     // READ-THROUGH CACHE: GET /apps/my-app/api/fingerprint/:shop/:visitorId
     router.get('/:shop/:visitorId', async (req, res) => {
