@@ -72,6 +72,7 @@ export async function fingerprintRouter() {
             if (!existing) {
                 // New doc
                 const created = await Fingerprint.create({
+                    app,
                     shop,
                     visitorId,
                     agentClassification,
