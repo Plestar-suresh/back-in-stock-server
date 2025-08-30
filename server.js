@@ -441,7 +441,7 @@ app.get("/", async (req, res) => {
 });
 
 
-webhookRouter.use("/api/fingerprint", fingerprintRouter);
+app.use("/api/fingerprint", fingerprintRouter);
 app.use(webhookRouter);
 
 app.use(express.json());

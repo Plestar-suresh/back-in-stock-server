@@ -1,12 +1,14 @@
 // routes/fingerprint.js
 import { getRedis } from '../db/redis.js';
 import { Fingerprint } from '../models/Fingerprint.js';
+const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 import { hashComponents } from '../utils/hash.js';
 import express from "express";
 
 export async function fingerprintRouter() {
     const redis = await getRedis(process.env.REDIS_URL);
     const router = express.Router();
+    router.use(authenticateShopifyWebhook);
     // READ-THROUGH CACHE: GET /apps/my-app/api/fingerprint/:shop/:visitorId
     router.get('/:shop/:visitorId', async (req, res) => {
         try {
