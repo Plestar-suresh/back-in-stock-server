@@ -16,6 +16,7 @@ const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 const { getRedis } = require('./db/redis');
 const { hashComponents } = require('./utils/hash');
+const { Fingerprint } = require('./models/Fingerprint');
 
 async function startServer() {
   const app = express();
