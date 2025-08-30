@@ -88,6 +88,7 @@ export async function fingerprintRouter() {
                 // Populate cache
                 await redis.set(cacheKey, JSON.stringify(created.toObject()), { EX: 60 * 60 * 24 });
                 return res.status(201).json({ created: true });
+                console.log("Fingerprint stored successfully")
             }
 
             // If nothing meaningful changed, do NOT update DB (your “no updates happen” rule)
