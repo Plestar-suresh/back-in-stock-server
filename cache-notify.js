@@ -14,7 +14,7 @@ async function createNotificationAndCache(data) {
   return newRequest;
 }
 
-
+ 
 
 async function getCachedNotificationRequests(inventoryItemId) {
   if (notificationCache[inventoryItemId]) return notificationCache[inventoryItemId];
