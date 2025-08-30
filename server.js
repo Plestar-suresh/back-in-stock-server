@@ -18,8 +18,7 @@ const Store = require('./models/Store');
 const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSingleNotification, createNotificationAndCache } = require('./cache-notify');
 const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
-const { default: puppeteer } = require('puppeteer');
-const { fingerprintRouter } = require('./routes/fingerprint');
+const { getRedis } = require('./db/redis');
 
 const webhookRouter = express.Router();
 webhookRouter.use(express.raw({ type: 'application/json' }));
@@ -439,9 +438,123 @@ app.get("/", async (req, res) => {
   await browser.close();*/
   res.json({ message: "GET request works" });
 });
+const redis = await getRedis(process.env.REDIS_URL);
+webhookRouter.post("/api/fingerprint", async (req, res) => {
+  try {
+    let data;
+    if (req.body && Buffer.isBuffer(req.body)) {
+      data = JSON.parse(req.body.toString('utf8'));
+    } else if (typeof req.body === 'string') {
+      data = JSON.parse(req.body);
+    } else {
+      data = req.body; // already parsed object
+    }
+    const {
+      app,
+      shop,
+      fingerprint: agentClassification,
+      visitorId,
+      components,
+    } = data;
 
+    if (!shop || !visitorId || !agentClassification) {
+      return res.status(400).json({ message: 'shop, visitorId, fingerprint are required' });
+    }
 
-app.use("/api/fingerprint", fingerprintRouter);
+    const ua = req.headers['user-agent'] || '';
+    const ip =
+      (req.headers['x-forwarded-for']?.toString().split(',')[0] ?? '').trim() ||
+      req.socket?.remoteAddress ||
+      '';
+
+    const componentsHash = components ? hashComponents(components) : undefined;
+
+    // Cache key
+    const cacheKey = `fp:${shop}:${visitorId}`;
+
+    // Try to get existing from Mongo (small indexed query)
+    const existing = await Fingerprint.findOne({ shop, visitorId });
+
+    if (!existing) {
+      // New doc
+      const created = await Fingerprint.create({
+        app,
+        shop,
+        visitorId,
+        agentClassification,
+        components,
+        componentsHash,
+        userAgent: ua,
+        ip,
+        firstSeenAt: new Date(),
+        lastSeenAt: new Date(),
+        hits: 1,
+      });
+
+      // Populate cache
+      await redis.set(cacheKey, JSON.stringify(created.toObject()), { EX: 60 * 60 * 24 });
+      console.log("Fingerprint stored successfully")
+      return res.status(201).json({ created: true });
+    }
+
+    // If nothing meaningful changed, do NOT update DB (your “no updates happen” rule)
+    const nothingChanged =
+      existing.agentClassification === agentClassification &&
+      existing.componentsHash === componentsHash &&
+      existing.userAgent === ua &&
+      existing.ip === ip;
+
+    if (nothingChanged) {
+      // Optionally just bump cache TTL without DB write
+      await redis.expire(cacheKey, 60 * 60 * 24);
+      return res.json({ updated: false, reason: 'no-change' });
+    }
+
+    // Otherwise, update minimally
+    existing.agentClassification = agentClassification;
+    if (components) {
+      existing.components = components;
+      existing.componentsHash = componentsHash;
+    }
+    existing.userAgent = ua;
+    existing.ip = ip;
+    existing.lastSeenAt = new Date();
+    existing.hits = (existing.hits || 0) + 1;
+
+    await existing.save();
+
+    // Refresh cache
+    await redis.set(cacheKey, JSON.stringify(existing.toObject()), { EX: 60 * 60 * 24 });
+    console.log("Fingerprint stored successfully")
+    return res.json({ updated: true });
+  } catch (err) {
+    console.error('[POST fingerprint] error', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+webhookRouter.get('/api/fingerprint/:shop/:visitorId', async (req, res) => {
+  try {
+    const { shop, visitorId } = req.params;
+    const cacheKey = `fp:${shop}:${visitorId}`;
+
+    // 1) Try Redis
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.json({ source: 'cache', data: JSON.parse(cached) });
+    }
+
+    // 2) Fallback to Mongo
+    const doc = await Fingerprint.findOne({ shop, visitorId }).lean();
+    if (!doc) return res.status(404).json({ message: 'Not found' });
+
+    // 3) Warm cache
+    await redis.set(cacheKey, JSON.stringify(doc), { EX: 60 * 60 * 24 }); // 24h
+    return res.json({ source: 'db', data: doc });
+  } catch (err) {
+    console.error('[GET fingerprint] error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 app.use(webhookRouter);
 
 app.use(express.json());
