@@ -117,7 +117,7 @@ export async function fingerprintRouter() {
 
             // Refresh cache
             await redis.set(cacheKey, JSON.stringify(existing.toObject()), { EX: 60 * 60 * 24 });
-
+            console.log("Fingerprint stored successfully")
             return res.json({ updated: true });
         } catch (err) {
             console.error('[POST fingerprint] error', err);
