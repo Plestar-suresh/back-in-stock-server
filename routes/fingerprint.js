@@ -36,7 +36,7 @@ export async function fingerprintRouter() {
     router.post('/', async (req, res) => {
         try {
             let data;
-            if (Buffer.isBuffer(req.body)) {
+            if (req.body && Buffer.isBuffer(req.body)) {
                 data = JSON.parse(req.body.toString('utf8'));
             } else if (typeof req.body === 'string') {
                 data = JSON.parse(req.body);
