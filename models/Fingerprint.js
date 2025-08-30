@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const FingerprintSchema = new mongoose.Schema(
   {
     shop: { type: String, required: true, index: true },
+    app: { type: String, required: true, index: true },
     visitorId: { type: String, required: true, index: true },
     agentClassification: { type: String, enum: ['Likely Human', 'Likely AI Agent'], required: true },
     // store a normalized snapshot of important bits for change detection

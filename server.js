@@ -476,7 +476,7 @@ async function startServer() {
       const cacheKey = `fp:${shop}:${visitorId}`;
 
       // Try to get existing from Mongo (small indexed query)
-      const existing = await Fingerprint.findOne({ shop, visitorId });
+      const existing = await Fingerprint.findOne({ shop, visitorId, app });
 
       if (!existing) {
         // New doc
