@@ -1,7 +1,7 @@
 // routes/fingerprint.js
 import { getRedis } from '../db/redis.js';
 import { Fingerprint } from '../models/Fingerprint.js';
-const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
+import  { authenticateShopifyWebhook } from '../middleware/authenticate';
 import { hashComponents } from '../utils/hash.js';
 import express from "express";
 
