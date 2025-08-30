@@ -27,7 +27,7 @@ webhookRouter.use(express.raw({ type: 'application/json' }));
 webhookRouter.use(authenticateShopifyWebhook);
 
 const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2025-07';
-const redis = await getRedis(process.env.REDIS_URL);
+const redis = getRedis(process.env.REDIS_URL);
 async function getInventoryItemId(storeDomain, accessToken, variantId) {
   const url = `https://${storeDomain}/admin/api/${SHOPIFY_API_VERSION}/variants/${variantId}.json`;
   const response = await fetch(url, {
