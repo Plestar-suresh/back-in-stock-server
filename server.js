@@ -19,6 +19,7 @@ const { getCachedNotificationRequests, markNotifiedAndUpdateCache, getCachedSing
 const { default: axios } = require('axios');
 const { default: authenticateShopifyWebhook } = require('./middleware/authenticate');
 const { getRedis } = require('./db/redis');
+const { hashComponents } = require('./utils/hash');
 
 const webhookRouter = express.Router();
 webhookRouter.use(express.raw({ type: 'application/json' }));
