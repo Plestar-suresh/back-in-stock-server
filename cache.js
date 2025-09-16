@@ -18,7 +18,7 @@ async function getCachedStoreToken(domain, app) {
   }
   return null;
 }
-
+ 
 async function getCachedStorefrontToken(domain, app) {
   const key = getCacheKey(domain, app);
   if (storefrontTokenCache[key]) return storefrontTokenCache[key];
