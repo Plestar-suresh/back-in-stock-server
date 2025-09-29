@@ -1,4 +1,5 @@
-import crypto from "crypto";
+import CryptoJS from 'crypto-js';
+import Hex from 'crypto-js/enc-hex';
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -41,10 +42,10 @@ const authenticateShopifyWebhook = async (req, res, next) => {
           "utf8"
         );*/
 
-      const generatedHmac = crypto
+      const generatedHmac = Hex.stringify(CryptoJS.HmacSHA256(payload, secret));/*crypto
         .createHmac("sha256", apiSecret)
         .update(req.body)
-        .digest("base64");
+        .digest("base64");*/
       //console.log("generatedHmac:" + generatedHmac + " hmacHeader:" + hmacHeader)
       if (generatedHmac === hmacHeader) {
         try {
