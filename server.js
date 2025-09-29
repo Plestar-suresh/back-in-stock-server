@@ -463,7 +463,7 @@ async function startServer() {
       if (!shop || !visitorId || !agentClassification) {
         return res.status(400).json({ message: 'shop, visitorId, fingerprint are required' });
       }
-
+      console.log("Fingerprint save request from "+shop+", VisitorID: "+visitorId+", Agent:"+agentClassification);
       const ua = req.headers['user-agent'] || '';
       const ip =
         (req.headers['x-forwarded-for']?.toString().split(',')[0] ?? '').trim() ||
@@ -494,13 +494,11 @@ async function startServer() {
           hits: 1,
         });
 
-        // Populate cache
         await redis.set(cacheKey, JSON.stringify(created.toObject()), { EX: 60 * 60 * 24 });
         console.log("Fingerprint stored successfully")
         return res.status(201).json({ created: true });
       }
 
-      // If nothing meaningful changed, do NOT update DB (your “no updates happen” rule)
       const nothingChanged =
         existing.agentClassification === agentClassification &&
         existing.componentsHash === componentsHash &&
@@ -508,12 +506,10 @@ async function startServer() {
         existing.ip === ip;
 
       if (nothingChanged) {
-        // Optionally just bump cache TTL without DB write
         await redis.expire(cacheKey, 60 * 60 * 24);
         return res.json({ updated: false, reason: 'no-change' });
       }
 
-      // Otherwise, update minimally
       existing.agentClassification = agentClassification;
       if (components) {
         existing.components = components;
@@ -526,7 +522,6 @@ async function startServer() {
 
       await existing.save();
 
-      // Refresh cache
       await redis.set(cacheKey, JSON.stringify(existing.toObject()), { EX: 60 * 60 * 24 });
       console.log("Fingerprint stored successfully")
       return res.json({ updated: true });
@@ -541,17 +536,14 @@ async function startServer() {
       const { shop, visitorId } = req.params;
       const cacheKey = `fp:${shop}:${visitorId}`;
 
-      // 1) Try Redis
       const cached = await redis.get(cacheKey);
       if (cached) {
         return res.json({ source: 'cache', data: JSON.parse(cached) });
       }
 
-      // 2) Fallback to Mongo
       const doc = await Fingerprint.findOne({ shop, visitorId }).lean();
       if (!doc) return res.status(404).json({ message: 'Not found' });
 
-      // 3) Warm cache
       await redis.set(cacheKey, JSON.stringify(doc), { EX: 60 * 60 * 24 }); // 24h
       return res.json({ source: 'db', data: doc });
     } catch (err) {
