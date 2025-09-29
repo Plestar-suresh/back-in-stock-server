@@ -18,7 +18,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
   if (data?.app == "Back In Stock" || (req.originalUrl && req.originalUrl == "/api/stock-update")) {
     apiSecret = process.env.API_SECRET1;
     //console.log(apiSecret);
-  }else if(data?.app==="AI GEO"){
+  } else if (data?.app === "AI GEO") {
     apiSecret = process.env.API_SECRET2;
     console.log(apiSecret);
   } else {
@@ -42,8 +42,8 @@ const authenticateShopifyWebhook = async (req, res, next) => {
             : JSON.stringify(req.body),
           "utf8"
         );*/
-
-      const generatedHmac = Hex.stringify(CryptoJS.HmacSHA256(data, apiSecret));/*crypto
+      const bodyAsString = rawBody.toString('utf8');
+      const generatedHmac = Hex.stringify(CryptoJS.HmacSHA256(bodyAsString, apiSecret));/*crypto
         .createHmac("sha256", apiSecret)
         .update(req.body)
         .digest("base64");*/
