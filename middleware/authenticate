@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js';
-import Hex from 'crypto-js/enc-hex';
+import Hex from 'crypto-js/enc-hex.js';
 import dotenv from "dotenv";
 
 dotenv.config();
