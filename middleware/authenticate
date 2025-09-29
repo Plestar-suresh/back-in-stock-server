@@ -42,7 +42,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
           "utf8"
         );*/
 
-      const generatedHmac = Hex.stringify(CryptoJS.HmacSHA256(payload, secret));/*crypto
+      const generatedHmac = Hex.stringify(CryptoJS.HmacSHA256(req.body, apiSecret));/*crypto
         .createHmac("sha256", apiSecret)
         .update(req.body)
         .digest("base64");*/
