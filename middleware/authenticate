@@ -80,10 +80,10 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .map((k) => `${k}=${params[k]}`)
         .join("");
       console.log("apiSecret:", apiSecret);
-      const digest = crypto
+      const digest = Hex.stringify(CryptoJS.HmacSHA256(sorted, apiSecret));/*crypto
         .createHmac("sha256", apiSecret)
         .update(sorted)
-        .digest("hex");
+        .digest("hex");*/
       console.log("digest:", digest + " signature:" + signature)
       if (digest === signature) {
         return next(); // ✅ App proxy authenticated
