@@ -463,7 +463,7 @@ async function startServer() {
       if (!shop || !visitorId || !agentClassification) {
         return res.status(400).json({ message: 'shop, visitorId, fingerprint are required' });
       }
-      console.log("Fingerprint save request from "+shop+", VisitorID: "+visitorId+", Agent:"+agentClassification);
+      console.log("Fingerprint save request from " + shop + ", VisitorID: " + visitorId + ", Agent:" + agentClassification);
       const ua = req.headers['user-agent'] || '';
       const ip =
         (req.headers['x-forwarded-for']?.toString().split(',')[0] ?? '').trim() ||
@@ -553,7 +553,13 @@ async function startServer() {
   });
   app.use(webhookRouter);
 
-  app.use(express.json());
+  app.use(express.json({
+    verify: (req, res, buf) => {
+      if (buf && buf.length) {
+        req.rawBody = buf; // Save as buffer for maximum fidelity
+      }
+    }
+  }));
   /*app.post('/api/fingerprint', async (req, res) => {
     let data;
     if (req.body && Buffer.isBuffer(req.body)) {
