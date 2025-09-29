@@ -17,9 +17,10 @@ const authenticateShopifyWebhook = async (req, res, next) => {
   }
   if (data?.app == "Back In Stock" || (req.originalUrl && req.originalUrl == "/api/stock-update")) {
     apiSecret = process.env.API_SECRET1;
-    console.log(apiSecret);
-  }else if(data?.app=="AI GEO"){
+    //console.log(apiSecret);
+  }else if(data?.app==="AI GEO"){
     apiSecret = process.env.API_SECRET2;
+    console.log(apiSecret);
   } else {
     apiSecret = process.env.API_SECRET;
   }
