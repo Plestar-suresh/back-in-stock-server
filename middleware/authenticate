@@ -17,7 +17,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
   }
   if (data?.app == "Back In Stock" || (req.originalUrl && req.originalUrl == "/api/stock-update")) {
     apiSecret = process.env.API_SECRET1;
-    //console.log(apiSecret);
+    console.log(apiSecret);
   }else if(data?.app=="AI GEO"){
     apiSecret = process.env.API_SECRET2;
   } else {
@@ -46,7 +46,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .createHmac("sha256", apiSecret)
         .update(req.body)
         .digest("base64");*/
-      //console.log("generatedHmac:" + generatedHmac + " hmacHeader:" + hmacHeader)
+      console.log("generatedHmac:" + generatedHmac + " hmacHeader:" + hmacHeader)
       if (generatedHmac === hmacHeader) {
         try {
           req.body = JSON.parse(req.body.toString('utf8'));
@@ -78,12 +78,12 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .sort()
         .map((k) => `${k}=${params[k]}`)
         .join("");
-      //console.log("apiSecret:", apiSecret);
+      console.log("apiSecret:", apiSecret);
       const digest = crypto
         .createHmac("sha256", apiSecret)
         .update(sorted)
         .digest("hex");
-      //console.log("digest:", digest + " signature:" + signature)
+      console.log("digest:", digest + " signature:" + signature)
       if (digest === signature) {
         return next(); // ✅ App proxy authenticated
       }
