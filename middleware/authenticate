@@ -50,7 +50,8 @@ const authenticateShopifyWebhook = async (req, res, next) => {
       console.log("generatedHmac:" + generatedHmac + " hmacHeader:" + hmacHeader)
       if (generatedHmac === hmacHeader) {
         try {
-          req.body = JSON.parse(req.body.toString('utf8'));
+          if (req?.body)
+            req.body = JSON.parse(req.body.toString('utf8'));
         } catch (e) {
           console.error("Failed to re-parse JSON body", e);
           return res.status(400).json({ response: "error", message: "Failed to parse JSON body" });
