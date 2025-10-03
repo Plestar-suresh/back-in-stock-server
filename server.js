@@ -443,70 +443,113 @@ async function startServer() {
   });
   const redis = await getRedis(process.env.REDIS_URL);
 
+  import mongoose from 'mongoose';
+
+  const FingerprintSchema = new mongoose.Schema(
+    {
+      shop: { type: String, required: true, index: true },
+      app: { type: String, required: true, index: true },
+      visitorId: { type: String, required: true, index: true },
+      agentClassification: { type: String, enum: ['Likely Human', 'Likely AI Agent'], required: true },
+      // store a normalized snapshot of important bits for change detection
+      componentsHash: { type: String, index: true },
+      components: { type: mongoose.Schema.Types.Mixed }, // raw FingerprintJS components
+      userAgent: { type: String },
+      ip: { type: String },
+      firstSeenAt: { type: Date, default: Date.now },
+      lastSeenAt: { type: Date, default: Date.now },
+      hits: { type: Number, default: 1 },
+    },
+    { timestamps: true }
+  );
+
+  // Ensure uniqueness per (shop, visitorId)
+  FingerprintSchema.index({ shop: 1, visitorId: 1 }, { unique: true });
+
+  export const Fingerprint = mongoose.model('Fingerprint', FingerprintSchema);
+
   webhookRouter.post("/api/fingerprint", async (req, res) => {
-  try {
-    let data = req.body;
-    if (Buffer.isBuffer(req.body)) data = JSON.parse(req.body.toString('utf8'));
-    else if (typeof req.body === 'string') data = JSON.parse(req.body);
+    try {
+      let data = req.body;
 
-    const { app, shop, fingerprint: agentClassification, visitorId, components } = data;
-    if (!shop || !visitorId || !agentClassification)
-      return res.status(400).json({ message: 'shop, visitorId, fingerprint required' });
+      if (Buffer.isBuffer(req.body)) data = JSON.parse(req.body.toString('utf8'));
+      else if (typeof req.body === 'string') data = JSON.parse(req.body);
 
-    const ua = req.headers['user-agent'] || '';
-    const ip = (req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || '');
-    const componentsHash = components ? hashComponents(components) : undefined;
-    const cacheKey = `fp:${shop}:${visitorId}`;
+      const { app, shop, fingerprint: agentClassification, visitorId, components } = data;
 
-    const now = new Date();
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+      if (!shop || !visitorId || !agentClassification)
+        return res.status(400).json({ message: 'shop, visitorId, fingerprint required' });
 
-    // Find existing fingerprint
-    let existing = await Fingerprint.findOne({ shop, visitorId, app });
+      const ua = req.headers['user-agent'] || '';
+      const ip =
+        (req.headers['x-forwarded-for']?.toString().split(',')[0] ?? '').trim() ||
+        req.socket?.remoteAddress ||
+        '';
 
-    if (!existing) {
-      // Insert new document
-      existing = await Fingerprint.create({
-        shop,
-        visitorId,
-        app,
-        agentClassification,
-        components,
-        componentsHash,
-        userAgent: ua,
-        ip,
-        firstSeenAt: now,
-        lastSeenAt: now,
-        hits: 1,
-      });
-    } else {
-      // Update existing document
-      existing.agentClassification = agentClassification;
-      existing.userAgent = ua;
-      existing.ip = ip;
-      existing.components = components;
-      existing.componentsHash = componentsHash;
+      const componentsHash = components ? hashComponents(components) : undefined;
+      const cacheKey = `fp:${shop}:${visitorId}`;
 
-      // Increment hits only if lastSeenAt is before today
-      if (!existing.lastSeenAt || existing.lastSeenAt < startOfToday) {
-        existing.hits = (existing.hits || 0) + 1;
+      const now = new Date();
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+
+      // --- FIX FOR MongoServerError: ConflictingUpdateOperators ---
+      // 1. Pre-fetch to determine if a hit increment is needed.
+      const existing = await Fingerprint.findOne({ shop, visitorId, app });
+
+      let incrementBy = 0;
+
+      if (existing) {
+        // Document exists: Increment only if last seen before today (a new day hit).
+        if (!existing.lastSeenAt || existing.lastSeenAt < startOfToday) {
+          incrementBy = 1;
+        }
+      } else {
+        // Document does not exist: We want hits to be 1 on insert. 
+        // Using $inc: 1 on a non-existent field initializes it to 0, then increments to 1.
+        incrementBy = 1;
       }
 
-      existing.lastSeenAt = now;
-      await existing.save();
+      // 2. Build the update object, conditionally adding $inc.
+      const update: any = {
+        $set: {
+          agentClassification,
+          components,
+          componentsHash,
+          userAgent: ua,
+          ip,
+          lastSeenAt: now,
+        },
+        $setOnInsert: {
+          firstSeenAt: now,
+          // CRITICAL FIX: Removed 'hits: 1' from $setOnInsert to prevent conflict with $inc
+        },
+      };
+
+      if (incrementBy > 0) {
+        // Add $inc only when we actually need to increment or initialize
+        update.$inc = { hits: incrementBy };
+      }
+      // If incrementBy is 0, we omit the $inc operator entirely, resolving the conflict.
+
+      // 3. Perform the atomic upsert.
+      const result = await Fingerprint.findOneAndUpdate(
+        { shop, visitorId, app },
+        update,
+        { upsert: true, new: true }
+      );
+
+      // Cache logic
+      await redis.set(cacheKey, JSON.stringify(result.toObject()), { EX: 60 * 60 * 24 });
+
+      return res.json({ success: true, hits: result.hits });
+
+    } catch (err) {
+      // Log the error and return a 500
+      console.error('[POST fingerprint] error', err);
+      return res.status(500).json({ message: 'Server error' });
     }
-
-    // Save to Redis cache
-    await redis.set(cacheKey, JSON.stringify(existing.toObject()), { EX: 60 * 60 * 24 });
-
-    return res.json({ success: true, hits: existing.hits });
-
-  } catch (err) {
-    console.error('[POST fingerprint] error', err);
-    return res.status(500).json({ message: 'Server error' });
-  }
-});
+  });
 
 
   webhookRouter.get('/api/fingerprint/:shop', async (req, res) => {
