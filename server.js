@@ -8,6 +8,7 @@ const { spawn } = require('child_process');
 const mongoose = require('mongoose');
 require('dotenv').config();
 const PORT = process.env.PORT || 7000;
+const moment = require('moment');
 
 const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, getCachedStorefrontToken } = require('./cache');
 const Store = require('./models/Store');
@@ -464,40 +465,55 @@ async function startServer() {
       const componentsHash = components ? hashComponents(components) : undefined;
       const cacheKey = `fp:${shop}:${visitorId}`;
 
-      // Upsert: insert if not exists, update if exists
-      const updated = await Fingerprint.findOneAndUpdate(
-        { shop, visitorId, app },
-        {
-          $set: {
-            agentClassification,
-            components,
-            componentsHash,
-            userAgent: ua,
-            ip,
-            lastSeenAt: new Date()
-          },
-          $setOnInsert: {
-            firstSeenAt: new Date(),
-            hits: 1
-          }
-        },
-        { upsert: true, new: true, rawResult: true } // rawResult lets us know if it was inserted
-      );
+      // Check if fingerprint exists
+      let existing = await Fingerprint.findOne({ shop, visitorId, app });
 
-      // If document existed, manually increment hits
-      if (!updated.lastErrorObject?.updatedExisting) {
-        // New doc inserted
-        console.log("Fingerprint stored successfully (new)");
-      } else {
-        updated.value.hits = (updated.value.hits || 0) + 1;
-        await updated.value.save();
-        console.log("Fingerprint updated successfully");
+      const today = moment().startOf('day');
+
+      if (!existing) {
+        // First visit ever → create
+        const created = await Fingerprint.create({
+          app,
+          shop,
+          visitorId,
+          agentClassification,
+          components,
+          componentsHash,
+          userAgent: ua,
+          ip,
+          firstSeenAt: new Date(),
+          lastSeenAt: new Date(),
+          hits: 1,
+        });
+
+        await redis.set(cacheKey, JSON.stringify(created.toObject()), { EX: 60 * 60 * 24 });
+        console.log("Fingerprint stored successfully (new visitor)");
+        return res.status(201).json({ created: true });
       }
 
-      // Update Redis cache
-      await redis.set(cacheKey, JSON.stringify(updated.value.toObject()), { EX: 60 * 60 * 24 });
+      // Check if lastSeenAt is today
+      const lastSeen = moment(existing.lastSeenAt);
+      if (!lastSeen.isSame(today, 'day')) {
+        // New day → increment hits
+        existing.hits = (existing.hits || 0) + 1;
+        existing.lastSeenAt = new Date();
+        existing.agentClassification = agentClassification;
+        if (components) {
+          existing.components = components;
+          existing.componentsHash = componentsHash;
+        }
+        existing.userAgent = ua;
+        existing.ip = ip;
 
-      return res.status(201).json({ created: !updated.lastErrorObject.updatedExisting });
+        await existing.save();
+        await redis.set(cacheKey, JSON.stringify(existing.toObject()), { EX: 60 * 60 * 24 });
+        console.log("Fingerprint updated for new day");
+        return res.json({ updated: true });
+      }
+
+      // Same day → do not increment hits
+      await redis.expire(cacheKey, 60 * 60 * 24);
+      return res.json({ updated: false, reason: 'already-counted-today' });
 
     } catch (err) {
       console.error('[POST fingerprint] error', err);
