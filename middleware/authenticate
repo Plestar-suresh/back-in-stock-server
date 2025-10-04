@@ -20,7 +20,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
     //console.log(apiSecret);
   } else if (data?.app === "AI GEO" || (req.method === 'GET' && req.originalUrl && req.originalUrl.includes('/api/fingerprint/'))) {
     apiSecret = process.env.API_SECRET2;
-    console.log(apiSecret);
+    //console.log(apiSecret);
   } else {
     apiSecret = process.env.API_SECRET;
   }
@@ -47,7 +47,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .createHmac("sha256", apiSecret)
         .update(req.body)
         .digest("base64");*/
-      console.log("generatedHmac:" + generatedHmac + " hmacHeader:" + hmacHeader)
+      //console.log("generatedHmac:" + generatedHmac + " hmacHeader:" + hmacHeader)
       if (generatedHmac === hmacHeader) {
         try {
           if (req?.body)
@@ -80,12 +80,12 @@ const authenticateShopifyWebhook = async (req, res, next) => {
         .sort()
         .map((k) => `${k}=${params[k]}`)
         .join("");
-      console.log("apiSecret:", apiSecret);
+      //console.log("apiSecret:", apiSecret);
       const digest = Hex.stringify(CryptoJS.HmacSHA256(sorted, apiSecret));/*crypto
         .createHmac("sha256", apiSecret)
         .update(sorted)
         .digest("hex");*/
-      console.log("digest:", digest + " signature:" + signature)
+      //console.log("digest:", digest + " signature:" + signature)
       if (digest === signature) {
         return next(); // ✅ App proxy authenticated
       }
