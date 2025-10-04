@@ -8,7 +8,6 @@ const { spawn } = require('child_process');
 const mongoose = require('mongoose');
 require('dotenv').config();
 const PORT = process.env.PORT || 7000;
-const moment = require('moment');
 
 const { getCachedStoreToken, updateStoreTokenCache, updateStoreFrontTokenCache, getCachedStorefrontToken } = require('./cache');
 const Store = require('./models/Store');
@@ -444,69 +443,93 @@ async function startServer() {
   const redis = await getRedis(process.env.REDIS_URL);
 
   webhookRouter.post("/api/fingerprint", async (req, res) => {
-  try {
-    let data = req.body;
-    if (Buffer.isBuffer(req.body)) data = JSON.parse(req.body.toString('utf8'));
-    else if (typeof req.body === 'string') data = JSON.parse(req.body);
-
-    const { app, shop, fingerprint: agentClassification, visitorId, components } = data;
-    if (!shop || !visitorId || !agentClassification)
-      return res.status(400).json({ message: 'shop, visitorId, fingerprint required' });
-
-    const ua = req.headers['user-agent'] || '';
-    const ip = (req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || '');
-    const componentsHash = components ? hashComponents(components) : undefined;
-    const cacheKey = `fp:${shop}:${visitorId}`;
-
-    const now = new Date();
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
-    // Find existing fingerprint
-    let existing = await Fingerprint.findOne({ shop, visitorId, app });
-
-    if (!existing) {
-      // Insert new document
-      existing = await Fingerprint.create({
-        shop,
-        visitorId,
+    try {
+      let data;
+      if (req.body && Buffer.isBuffer(req.body)) {
+        data = JSON.parse(req.body.toString('utf8'));
+      } else if (typeof req.body === 'string') {
+        data = JSON.parse(req.body);
+      } else {
+        data = req.body; // already parsed object
+      }
+      const {
         app,
-        agentClassification,
+        shop,
+        fingerprint: agentClassification,
+        visitorId,
         components,
-        componentsHash,
-        userAgent: ua,
-        ip,
-        firstSeenAt: now,
-        lastSeenAt: now,
-        hits: 1,
-      });
-    } else {
-      // Update existing document
-      existing.agentClassification = agentClassification;
-      existing.userAgent = ua;
-      existing.ip = ip;
-      existing.components = components;
-      existing.componentsHash = componentsHash;
+      } = data;
 
-      // Increment hits only if lastSeenAt is before today
-      if (!existing.lastSeenAt || existing.lastSeenAt < startOfToday) {
-        existing.hits = (existing.hits || 0) + 1;
+      if (!shop || !visitorId || !agentClassification) {
+        return res.status(400).json({ message: 'shop, visitorId, fingerprint are required' });
+      }
+      console.log("Fingerprint save request from " + shop + ", VisitorID: " + visitorId + ", Agent:" + agentClassification);
+      const ua = req.headers['user-agent'] || '';
+      const ip =
+        (req.headers['x-forwarded-for']?.toString().split(',')[0] ?? '').trim() ||
+        req.socket?.remoteAddress ||
+        '';
+
+      const componentsHash = components ? hashComponents(components) : undefined;
+
+      // Cache key
+      const cacheKey = `fp:${shop}:${visitorId}`;
+
+      // Try to get existing from Mongo (small indexed query)
+      const existing = await Fingerprint.findOne({ shop, visitorId, app });
+
+      if (!existing) {
+        // New doc
+        const created = await Fingerprint.create({
+          app,
+          shop,
+          visitorId,
+          agentClassification,
+          components,
+          componentsHash,
+          userAgent: ua,
+          ip,
+          firstSeenAt: new Date(),
+          lastSeenAt: new Date(),
+          hits: 1,
+        });
+
+        await redis.set(cacheKey, JSON.stringify(created.toObject()), { EX: 60 * 60 * 24 });
+        console.log("Fingerprint stored successfully")
+        return res.status(201).json({ created: true });
       }
 
-      existing.lastSeenAt = now;
+      const nothingChanged =
+        existing.agentClassification === agentClassification &&
+        existing.componentsHash === componentsHash &&
+        existing.userAgent === ua &&
+        existing.ip === ip;
+
+      if (nothingChanged) {
+        await redis.expire(cacheKey, 60 * 60 * 24);
+        return res.json({ updated: false, reason: 'no-change' });
+      }
+
+      existing.agentClassification = agentClassification;
+      if (components) {
+        existing.components = components;
+        existing.componentsHash = componentsHash;
+      }
+      existing.userAgent = ua;
+      existing.ip = ip;
+      existing.lastSeenAt = new Date();
+      existing.hits = (existing.hits || 0) + 1;
+
       await existing.save();
+
+      await redis.set(cacheKey, JSON.stringify(existing.toObject()), { EX: 60 * 60 * 24 });
+      console.log("Fingerprint stored successfully")
+      return res.json({ updated: true });
+    } catch (err) {
+      console.error('[POST fingerprint] error', err);
+      return res.status(500).json({ message: 'Server error' });
     }
-
-    // Save to Redis cache
-    await redis.set(cacheKey, JSON.stringify(existing.toObject()), { EX: 60 * 60 * 24 });
-
-    return res.json({ success: true, hits: existing.hits });
-
-  } catch (err) {
-    console.error('[POST fingerprint] error', err);
-    return res.status(500).json({ message: 'Server error' });
-  }
-});
+  });
 
 
   webhookRouter.get('/api/fingerprint/:shop', async (req, res) => {
