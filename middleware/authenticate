@@ -21,7 +21,7 @@ const authenticateShopifyWebhook = async (req, res, next) => {
   } else if (data?.app === "AI GEO" || (req.method === 'GET' && req.originalUrl && req.originalUrl.includes('/api/fingerprint/'))) {
     apiSecret = process.env.API_SECRET2;
     //console.log(apiSecret);
-  } else {
+  } else { 
     apiSecret = process.env.API_SECRET;
   }
   if (!apiSecret) {
