@@ -440,7 +440,7 @@ async function startServer() {
     await browser.close();*/
     res.json({ message: "GET request works" });
   });
-  const redis = await getRedis(process.env.REDIS_URL);
+  //const redis = await getRedis(process.env.REDIS_URL);
 
   webhookRouter.post("/api/fingerprint", async (req, res) => {
     try {
@@ -485,7 +485,7 @@ async function startServer() {
       // 3. Define the cache key
       // NOTE: For per-day tracking, the cache key should not include the day, 
       // but we will keep the original key to track the *latest* profile (optional)
-      const cacheKey = `fp:${shop}:${visitorId}`;
+      //const cacheKey = `fp:${shop}:${visitorId}`;
 
       // --- Use findOneAndUpdate with the new queryKey ---
       const updateFields = {
@@ -518,11 +518,11 @@ async function startServer() {
       const isNew = result.lastErrorObject?.updatedExisting === false;
 
       // Update Redis cache (optional: tracks the latest state for the visitor regardless of the day)
-      if (result.value) {
+      /*if (result.value) {
         // You might want to update the cache only if it's a new day or the profile changed, 
         // but for simplicity, we update the cache with the current day's profile.
         await redis.set(cacheKey, JSON.stringify(result.value.toObject()), { EX: 60 * 60 * 24 });
-      }
+      }*/
 
       if (isNew) {
         console.log("Fingerprint profile created for the new day and first hit logged.");
@@ -542,10 +542,10 @@ async function startServer() {
   webhookRouter.get('/api/fingerprint/:shop', async (req, res) => {
     try {
       const { shop } = req.params;
-      const cacheKey = `fp:${shop}:all`;
+      /*const cacheKey = `fp:${shop}:all`;
 
       // Check Redis cache
-      /*const cached = await redis.get(cacheKey);
+      const cached = await redis.get(cacheKey);
       if (cached) {
         return res.json({ source: 'cache', data: JSON.parse(cached) });
       }*/
@@ -557,7 +557,7 @@ async function startServer() {
       }
 
       // Save to cache for 24h
-      await redis.set(cacheKey, JSON.stringify(docs), { EX: 60 * 60 * 24 });
+      //await redis.set(cacheKey, JSON.stringify(docs), { EX: 60 * 60 * 24 });
 
       return res.json({ source: 'db', data: docs });
     } catch (err) {
