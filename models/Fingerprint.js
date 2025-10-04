@@ -20,6 +20,6 @@ const FingerprintSchema = new mongoose.Schema(
 );
 
 // Ensure uniqueness per (shop, visitorId)
-FingerprintSchema.index({ shop: 1, visitorId: 1 }, { unique: true });
+FingerprintSchema.index({ shop: 1, visitorId: 1 , visitDay: 1}, { unique: true });
 
 export const Fingerprint = mongoose.model('Fingerprint', FingerprintSchema);
