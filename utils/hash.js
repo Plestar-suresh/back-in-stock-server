@@ -17,6 +17,10 @@ function stableStringify(obj) {
 }
 
 export function hashComponents(components) {
+  if (components.canvas && components.canvas.value) {
+    delete components.canvas.value.geometry;
+    delete components.canvas.value.text;
+  }
   const normalized = JSON.stringify(stableStringify(components));
   return crypto.createHash('sha256').update(normalized).digest('hex');
 }
