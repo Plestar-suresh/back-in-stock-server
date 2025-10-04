@@ -7,6 +7,7 @@ const FingerprintSchema = new mongoose.Schema(
     visitorId: { type: String, required: true, index: true },
     agentClassification: { type: String, enum: ['Likely Human', 'Likely AI Agent'], required: true },
     // store a normalized snapshot of important bits for change detection
+    visitDay: { type: Date, required: true },
     componentsHash: { type: String, index: true },
     components: { type: mongoose.Schema.Types.Mixed }, // raw FingerprintJS components
     userAgent: { type: String },

@@ -473,60 +473,71 @@ async function startServer() {
         req.socket?.remoteAddress ||
         '';
 
-      const componentsHash = components ? hashComponents(components) : undefined; // Assuming hashComponents is defined elsewhere
+      const componentsHash = components ? hashComponents(components) : undefined;
+
+      // 1. Calculate the start of the current day (midnight UTC)
+      const now = new Date();
+      const visitDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+      // 2. Define the unique query key now including 'visitDay'
+      const queryKey = { shop, visitorId, visitDay };
+
+      // 3. Define the cache key
+      // NOTE: For per-day tracking, the cache key should not include the day, 
+      // but we will keep the original key to track the *latest* profile (optional)
       const cacheKey = `fp:${shop}:${visitorId}`;
 
-      // --- Core Change: Use findOneAndUpdate with upsert: true ---
+      // --- Use findOneAndUpdate with the new queryKey ---
       const updateFields = {
         $set: {
           app,
           agentClassification,
-          lastSeenAt: new Date(),
+          lastSeenAt: now, // lastSeenAt remains the exact time
           userAgent: ua,
           ip: ip,
-          // Only update components if they are provided, preventing overwrite with empty object
-          ...(components ? { components, componentsHash } : {}), 
+          ...(components ? { components, componentsHash } : {}),
         },
-        // $setOnInsert is for fields only set when a *new* document is created (upsert)
+        // $setOnInsert is for fields only set when a *new* document for that DAY is created (upsert)
         $setOnInsert: {
-          firstSeenAt: new Date(),
+          firstSeenAt: now,
         },
-        // Increment hits counter
+        // Increment hits counter for that day
         $inc: { hits: 1 },
       };
 
       const result = await Fingerprint.findOneAndUpdate(
-        { shop, visitorId }, // Query based on the unique index
+        queryKey, // Query based on shop, visitorId, AND visitDay
         updateFields,
         {
-          new: true, // Return the modified document rather than the original
-          upsert: true, // Create the document if it doesn't exist
-          rawResult: true, // Return the raw result object to check if it was an insert or update
+          new: true,
+          upsert: true,
+          rawResult: true,
         }
       );
 
       const isNew = result.lastErrorObject?.updatedExisting === false;
 
-      // Update Redis cache
+      // Update Redis cache (optional: tracks the latest state for the visitor regardless of the day)
       if (result.value) {
+        // You might want to update the cache only if it's a new day or the profile changed, 
+        // but for simplicity, we update the cache with the current day's profile.
         await redis.set(cacheKey, JSON.stringify(result.value.toObject()), { EX: 60 * 60 * 24 });
       }
-      
+
       if (isNew) {
-        console.log("Fingerprint created successfully");
+        console.log("Fingerprint profile created for the new day and first hit logged.");
         return res.status(201).json({ created: true });
       } else {
-        console.log("Fingerprint updated successfully");
+        console.log("Fingerprint profile updated for the existing day and hit logged.");
         return res.json({ updated: true });
       }
 
     } catch (err) {
       console.error('[POST fingerprint] error', err);
-      // Handle potential (though now less likely) server errors gracefully
+      // Handle the error gracefully
       return res.status(500).json({ message: 'Server error' });
     }
-});
-
+  });
 
   webhookRouter.get('/api/fingerprint/:shop', async (req, res) => {
     try {
