@@ -452,6 +452,7 @@ async function startServer() {
       } else {
         data = req.body; // already parsed object
       }
+
       const {
         app,
         shop,
@@ -463,73 +464,68 @@ async function startServer() {
       if (!shop || !visitorId || !agentClassification) {
         return res.status(400).json({ message: 'shop, visitorId, fingerprint are required' });
       }
+
       console.log("Fingerprint save request from " + shop + ", VisitorID: " + visitorId + ", Agent:" + agentClassification);
+
       const ua = req.headers['user-agent'] || '';
       const ip =
         (req.headers['x-forwarded-for']?.toString().split(',')[0] ?? '').trim() ||
         req.socket?.remoteAddress ||
         '';
 
-      const componentsHash = components ? hashComponents(components) : undefined;
-
-      // Cache key
+      const componentsHash = components ? hashComponents(components) : undefined; // Assuming hashComponents is defined elsewhere
       const cacheKey = `fp:${shop}:${visitorId}`;
 
-      // Try to get existing from Mongo (small indexed query)
-      const existing = await Fingerprint.findOne({ shop, visitorId, app });
-
-      if (!existing) {
-        // New doc
-        const created = await Fingerprint.create({
+      // --- Core Change: Use findOneAndUpdate with upsert: true ---
+      const updateFields = {
+        $set: {
           app,
-          shop,
-          visitorId,
           agentClassification,
-          components,
-          componentsHash,
-          userAgent: ua,
-          ip,
-          firstSeenAt: new Date(),
           lastSeenAt: new Date(),
-          hits: 1,
-        });
+          userAgent: ua,
+          ip: ip,
+          // Only update components if they are provided, preventing overwrite with empty object
+          ...(components ? { components, componentsHash } : {}), 
+        },
+        // $setOnInsert is for fields only set when a *new* document is created (upsert)
+        $setOnInsert: {
+          firstSeenAt: new Date(),
+        },
+        // Increment hits counter
+        $inc: { hits: 1 },
+      };
 
-        await redis.set(cacheKey, JSON.stringify(created.toObject()), { EX: 60 * 60 * 24 });
-        console.log("Fingerprint stored successfully")
+      const result = await Fingerprint.findOneAndUpdate(
+        { shop, visitorId }, // Query based on the unique index
+        updateFields,
+        {
+          new: true, // Return the modified document rather than the original
+          upsert: true, // Create the document if it doesn't exist
+          rawResult: true, // Return the raw result object to check if it was an insert or update
+        }
+      );
+
+      const isNew = result.lastErrorObject?.updatedExisting === false;
+
+      // Update Redis cache
+      if (result.value) {
+        await redis.set(cacheKey, JSON.stringify(result.value.toObject()), { EX: 60 * 60 * 24 });
+      }
+      
+      if (isNew) {
+        console.log("Fingerprint created successfully");
         return res.status(201).json({ created: true });
+      } else {
+        console.log("Fingerprint updated successfully");
+        return res.json({ updated: true });
       }
 
-      const nothingChanged =
-        existing.agentClassification === agentClassification &&
-        existing.componentsHash === componentsHash &&
-        existing.userAgent === ua &&
-        existing.ip === ip;
-
-      if (nothingChanged) {
-        await redis.expire(cacheKey, 60 * 60 * 24);
-        return res.json({ updated: false, reason: 'no-change' });
-      }
-
-      existing.agentClassification = agentClassification;
-      if (components) {
-        existing.components = components;
-        existing.componentsHash = componentsHash;
-      }
-      existing.userAgent = ua;
-      existing.ip = ip;
-      existing.lastSeenAt = new Date();
-      existing.hits = (existing.hits || 0) + 1;
-
-      await existing.save();
-
-      await redis.set(cacheKey, JSON.stringify(existing.toObject()), { EX: 60 * 60 * 24 });
-      console.log("Fingerprint stored successfully")
-      return res.json({ updated: true });
     } catch (err) {
       console.error('[POST fingerprint] error', err);
+      // Handle potential (though now less likely) server errors gracefully
       return res.status(500).json({ message: 'Server error' });
     }
-  });
+});
 
 
   webhookRouter.get('/api/fingerprint/:shop', async (req, res) => {
