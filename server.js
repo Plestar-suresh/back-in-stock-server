@@ -542,13 +542,13 @@ async function startServer() {
   webhookRouter.get('/api/fingerprint/:shop', async (req, res) => {
     try {
       const { shop } = req.params;
-      const cacheKey = `fp:${shop}:all`;
+      /*const cacheKey = `fp:${shop}:all`;
 
       // Check Redis cache
       const cached = await redis.get(cacheKey);
       if (cached) {
         return res.json({ source: 'cache', data: JSON.parse(cached) });
-      }
+      }*/
 
       // Get all fingerprints for this shop
       const docs = await Fingerprint.find({ shop }).lean();
