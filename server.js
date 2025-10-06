@@ -23,6 +23,7 @@ async function startServer() {
   app.use(cors());
 
   const webhookRouter = express.Router();
+  app.use(express.raw({ type: 'application/json' }))
   webhookRouter.use(express.raw({ type: 'application/json' }));
   webhookRouter.use(authenticateShopifyWebhook);
 
