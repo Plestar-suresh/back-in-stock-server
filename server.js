@@ -452,7 +452,7 @@ async function startServer() {
       } else {
         data = req.body; // already parsed object
       }
-
+      console.log(data);
       const {
         app,
         shop,
