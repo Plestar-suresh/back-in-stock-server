@@ -445,7 +445,6 @@ async function startServer() {
 
   app.post("/api/fingerprint", async (req, res) => {
     try {
-      console.log(req.body);
       let data;
       if (req.body && Buffer.isBuffer(req.body)) {
         data = JSON.parse(req.body.toString('utf8'));
@@ -454,7 +453,6 @@ async function startServer() {
       } else {
         data = req.body; // already parsed object
       }
-      console.log(data);
       const {
         app,
         shop,
