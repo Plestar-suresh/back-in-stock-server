@@ -442,44 +442,6 @@ async function startServer() {
   });
   //const redis = await getRedis(process.env.REDIS_URL);
 
-  
-
-  webhookRouter.get('/api/fingerprint/:shop', async (req, res) => {
-    try {
-      const { shop } = req.params;
-      /*const cacheKey = `fp:${shop}:all`;
-
-      // Check Redis cache
-      const cached = await redis.get(cacheKey);
-      if (cached) {
-        return res.json({ source: 'cache', data: JSON.parse(cached) });
-      }*/
-
-      // Get all fingerprints for this shop
-      const docs = await Fingerprint.find({ shop }).lean();
-      if (!docs || docs.length === 0) {
-        return res.status(404).json({ message: 'No fingerprints found for this shop' });
-      }
-
-      // Save to cache for 24h
-      //await redis.set(cacheKey, JSON.stringify(docs), { EX: 60 * 60 * 24 });
-
-      return res.json({ source: 'db', data: docs });
-    } catch (err) {
-      console.error('[GET fingerprint by shop] error', err);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  app.use(webhookRouter);
-
-  app.use(express.json({
-    verify: (req, res, buf) => {
-      if (buf && buf.length) {
-        req.rawBody = buf; // Save as buffer for maximum fidelity
-      }
-    }
-  }));
   app.post("/api/fingerprint", async (req, res) => {
     try {
       let data;
@@ -576,6 +538,43 @@ async function startServer() {
       return res.status(500).json({ message: 'Server error' });
     }
   });
+
+  webhookRouter.get('/api/fingerprint/:shop', async (req, res) => {
+    try {
+      const { shop } = req.params;
+      /*const cacheKey = `fp:${shop}:all`;
+
+      // Check Redis cache
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return res.json({ source: 'cache', data: JSON.parse(cached) });
+      }*/
+
+      // Get all fingerprints for this shop
+      const docs = await Fingerprint.find({ shop }).lean();
+      if (!docs || docs.length === 0) {
+        return res.status(404).json({ message: 'No fingerprints found for this shop' });
+      }
+
+      // Save to cache for 24h
+      //await redis.set(cacheKey, JSON.stringify(docs), { EX: 60 * 60 * 24 });
+
+      return res.json({ source: 'db', data: docs });
+    } catch (err) {
+      console.error('[GET fingerprint by shop] error', err);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.use(webhookRouter);
+
+  app.use(express.json({
+    verify: (req, res, buf) => {
+      if (buf && buf.length) {
+        req.rawBody = buf; // Save as buffer for maximum fidelity
+      }
+    }
+  }));
   /*app.post('/api/fingerprint', async (req, res) => {
     let data;
     if (req.body && Buffer.isBuffer(req.body)) {
