@@ -17,6 +17,7 @@ const { default: authenticateShopifyWebhook } = require('./middleware/authentica
 const { getRedis } = require('./db/redis');
 const { hashComponents } = require('./utils/hash');
 const { Fingerprint } = require('./models/Fingerprint');
+const Billing = require('./models/Billing');
 
 async function startServer() {
   const app = express();
