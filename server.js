@@ -565,7 +565,37 @@ async function startServer() {
       res.status(500).json({ message: 'Server error' });
     }
   });
+  webhookRouter.post("/api/purchased", async (req, res) => {
+    try {
+      const { store, planName, price, chargeId, status, createdAt } = req.body;
 
+      // Prevent duplicate charge insert
+      const exists = await Billing.findOne({ chargeId });
+      if (exists) {
+        return res.json({ message: "Billing record already exists" });
+      }
+
+      const newBilling = new Billing({
+        store,
+        plan: planName,
+        price,
+        chargeId,
+        status,
+        createdAt,
+      });
+
+      await newBilling.save();
+
+      res.json({ success: true, message: "Billing saved successfully ✅" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: "Server Error" });
+    }
+  });
+  webhookRouter.get("/api/billing/:store", async (req, res) => {
+    const data = await Billing.find({ store: req.params.store });
+    res.json(data);
+  });
   app.use(webhookRouter);
 
   app.use(express.json({
