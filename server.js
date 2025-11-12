@@ -568,7 +568,15 @@ async function startServer() {
   });
   webhookRouter.post("/api/purchased", async (req, res) => {
     try {
-      const { store, planName, price, chargeId, status, createdAt } = req.body;
+      let data;
+      if (req.body && Buffer.isBuffer(req.body)) {
+        data = JSON.parse(req.body.toString('utf8'));
+      } else if (typeof req.body === 'string') {
+        data = JSON.parse(req.body);
+      } else {
+        data = req.body; // already parsed object
+      }
+      const { app, store, planName, price, chargeId, status, createdAt } = data;
 
       // Prevent duplicate charge insert
       const exists = await Billing.findOne({ chargeId });
@@ -577,6 +585,7 @@ async function startServer() {
       }
 
       const newBilling = new Billing({
+        app,
         store,
         plan: planName,
         price,

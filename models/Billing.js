@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
 
 const BillingSchema = new mongoose.Schema({
-  store: { type: String, required: true },
-  plan: { type: String, required: true },
-  price: { type: String, required: true },
-  chargeId: { type: String, required: true, unique: true },
-  status: { type: String, required: true },
+  store: { type: String},
+  plan: { type: String},
+  price: { type: String},
+  chargeId: { type: String},
+  status: { type: String},
+  app:{ type: String},
   createdAt: { type: Date, default: Date.now }
 });
 
