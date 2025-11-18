@@ -576,7 +576,7 @@ async function startServer() {
       } else {
         data = req.body; // already parsed object
       }
-      const { app, store, planName, price, chargeId, status, createdAt } = data;
+      const { app, store, storeDomain, planName, price, chargeId, status, createdAt } = data;
 
       // Prevent duplicate charge insert
       const exists = await Billing.findOne({ chargeId });
@@ -587,6 +587,7 @@ async function startServer() {
       const newBilling = new Billing({
         app,
         store,
+        storeDomain,
         plan: planName,
         price,
         chargeId,
